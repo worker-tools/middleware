@@ -5,7 +5,7 @@ Placeholder for a future middleware solutions that work in worker environments s
 In the meantime, here is a TypeScript-safe pattern you can use. The goal is the let developers write close-to vanilla request handlers (as outlinded in various Cloudflare Workers tutorials, i.e. `(event: FetchEvent) => Promise<Response>`), while letting the middleware enhance them in various ways. 
 
 ```ts
-// Only requirement for developers is that they provde the fetch `event` as a field in a record:
+// Only requirement for developers is that they provde the fetch `event` as a field in a record
 export type BaseArg = { event: FetchEvent };
 
 // Our example middleware will add a `cookieStore` field to the argument.
