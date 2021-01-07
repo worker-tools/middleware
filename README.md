@@ -32,12 +32,14 @@ export const cookiesMiddleware = (opts: CookiesOptions = {}) =>
       
       // Do work after
       const { body, status, statusText, headers } = response;
-      return new Response(body, { status, statusText, headers: [...headers, ...cookieStore.headers]});
+      return new Response(body, { 
+        status, statusText, headers: [...headers, ...cookieStore.headers],
+      });
     };
 ```
 
 ## Usage
-What's good about this pattern is that all the weird type-foo goes into the middleware itself. Users, for the most part needn't
+What's good about this pattern is that all the weird type-foo goes into the middleware itself. Users, for the most part, needn't
 concern themselves with types. Their editor just "magicially" picks up the correct types for `event`  and `cookieStore`. 
 
 
@@ -67,7 +69,7 @@ const handleEvent = withCookies(withOther(async ({ event, cookieStore }) => {
 ```
 
 ## Limitations
-This pattern isn't perfect: Adding an extra field (without creating a seaprate middleware) requires specifying type paramters by the user:
+Unfortunately, this pattern isn't perfect: Adding an extra field (without creating a seaprate middleware) requires specifying type paramters by the user:
 
 ```ts
 self.addEventListener('fetch', event => event.respondWith(handleEvent({
@@ -76,10 +78,11 @@ self.addEventListener('fetch', event => event.respondWith(handleEvent({
 })));
 
 const withCookies = cookiesMiddleware(/* no opts */);
+const withOther = myOtherMiddleware();
 
-const handleEvent = withCookies<BaseArg & { url: URL }>(async ({ event, url, cookieStore }) => {
-  return new Response(`Hello );
-});
+const handleEvent = withCookies<BaseArg & { url: URL }>(withOther(async ({ event, url, cookieStore }) => {
+  return new Response('Hello World');
+}));
 ```
 
 There's also no easy way to pre-combine multipe middlewares, without creating a new middleware itself
