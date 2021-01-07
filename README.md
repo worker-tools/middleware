@@ -47,7 +47,7 @@ concern themselves with types. Their editor just "magicially" picks up the corre
 self.addEventListener('fetch', event => event.respondWith(handleEvent({ event })))
 
 const handleEvent = cookiesMiddleware(/* no opts */)(async ({ event, cookieStore }) => {
-  const hello = await cookieStore.get('hello'))?.value;
+  const hello = (await cookieStore.get('hello'))?.value;
   await cookieStore.set('hello', 'Hello World!');
   return new Response(hello ?? 'Reload page!');
 });
