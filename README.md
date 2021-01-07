@@ -47,8 +47,9 @@ concern themselves with types. Their editor just "magicially" picks up the corre
 self.addEventListener('fetch', event => event.respondWith(handleEvent({ event })))
 
 const handleEvent = cookiesMiddleware(/* no opts */)(async ({ event, cookieStore }) => {
+  const hello = await cookieStore.get('hello'))?.value;
   await cookieStore.set('hello', 'Hello World!');
-  return new Response((await cookieStore.get('hello'))?.value ?? 'Reload page!');
+  return new Response(hello ?? 'Reload page!');
 });
 ```
 
@@ -59,12 +60,11 @@ For example, the following works assuming `myOtherMiddleware` follows the the sa
 self.addEventListener('fetch', event => event.respondWith(handleEvent({ event })))
 
 // We can separate the options application:
-const withCookies = cookiesMiddleware(/* no opts */)
+const withCookies = cookiesMiddleware()
 const withOther = myOtherMiddleware();
 
 const handleEvent = withCookies(withOther(async ({ event, cookieStore }) => {
-  await cookieStore.set('hello', 'Hello World!');
-  return new Response((await cookieStore.get('hello'))?.value ?? 'Reload page!');
+  return new Response('Hello World!');
 }));
 ```
 
@@ -77,12 +77,12 @@ self.addEventListener('fetch', event => event.respondWith(handleEvent({
   url: new URL(event.request.url), // an additional field...
 })));
 
-const withCookies = cookiesMiddleware(/* no opts */);
+const withCookies = cookiesMiddleware();
 const withOther = myOtherMiddleware();
 
 // ...needs to be specified here:
 const handleEvent = withCookies<BaseArg & { url: URL }>(withOther(async ({ event, url, cookieStore }) => {
-  return new Response('Hello World');
+  return new Response('Hello World!');
 }));
 ```
 
