@@ -2,13 +2,10 @@
 
 Placeholder for a future middleware solutions that work in worker environments such as Cloudflare Workers.
 
-In the meantime, here is a TypeScript-safe pattern you can use.
+In the meantime, here is a TypeScript-safe pattern you can use. The goal is the let developers write close-to vanilla request handlers (as outlinded in various Cloudflare Workers tutorials, i.e. `(event: FetchEvent) => Promise<Response>`), while letting the middleware enhance them in various ways. 
 
 ```ts
-// Handlers can be sync or async functions. This type helps:
-export type Awaitable<T> = T | Promise<T>;
-
-// Only requirement for users is that they provde an object with an `event` field
+// Only requirement for developers is that they provde the fetch `event` as a field in a record:
 export type BaseArg = { event: FetchEvent };
 
 // Our example middleware will add a `cookieStore` field to the argument.
@@ -39,7 +36,7 @@ export const cookiesMiddleware = (opts: CookiesOptions = {}) =>
 ```
 
 ## Usage
-What's good about this pattern is that all the weird type-foo goes into the middleware itself. Users, for the most part, needn't
+What's good about this pattern is that all the weird type-foo goes into the middleware itself. Developers, for the most part, needn't
 concern themselves with types. Their editor just "magicially" picks up the correct types for `event`  and `cookieStore`. 
 
 
