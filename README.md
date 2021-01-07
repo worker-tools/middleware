@@ -48,7 +48,7 @@ self.addEventListener('fetch', event => event.respondWith(handleEvent({ event })
 
 const handleEvent = cookiesMiddleware(/* no opts */)(async ({ event, cookieStore }) => {
   const hello = (await cookieStore.get('hello'))?.value;
-  await cookieStore.set('hello', 'Hello World!');
+  await cookieStore.set('hello', 'Hello Cookie!');
   return new Response(hello ?? 'Reload page!');
 });
 ```
