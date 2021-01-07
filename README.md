@@ -8,14 +8,14 @@ In the meantime, here is a TypeScript-safe pattern you can use. The goal is the 
 // Only requirement for developers is that they provde the fetch `event` as a field in a record
 export type BaseArg = { event: FetchEvent };
 
-// Our example middleware will add a `cookieStore` field to the argument.
+// Our example middleware will add a `cookieStore` field to the argument
 export type CookiesArgs = { cookieStore: CookieStore };
 export type CookiesHandler<A extends BaseArg> = (args: A & CookiesArgs) => Promise<Response>;
 
 export interface CookiesOptions { /* user-provided options for middleware */}
 ```
 
-This is the actual middleware: A function that wraps the original request handler.
+This is the actual middleware: A function that wraps the original request handler (for a `CookieStore` implementation, [see here](https://github.com/worker-utils/request-cookie-store))
 
 ```ts
 export const cookiesMiddleware = (opts: CookiesOptions = {}) => 
