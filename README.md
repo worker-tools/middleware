@@ -74,12 +74,13 @@ Unfortunately, this pattern isn't perfect: Adding an extra field (without creati
 ```ts
 self.addEventListener('fetch', event => event.respondWith(handleEvent({
   event, 
-  url: new URL(event.request.url),
+  url: new URL(event.request.url), // an additional field...
 })));
 
 const withCookies = cookiesMiddleware(/* no opts */);
 const withOther = myOtherMiddleware();
 
+// ...needs to be specified here:
 const handleEvent = withCookies<BaseArg & { url: URL }>(withOther(async ({ event, url, cookieStore }) => {
   return new Response('Hello World');
 }));
