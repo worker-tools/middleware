@@ -15,7 +15,7 @@ export type CookiesHandler<A extends BaseArg> = (args: A & CookiesArgs) => Promi
 export interface CookiesOptions { /* user-provided options for middleware */}
 ```
 
-This is the actual middleware: A function that wraps the original request handler (for a `CookieStore` implementation, [see here](https://github.com/worker-utils/request-cookie-store))
+This is the actual middleware: A function that wraps the original request handler:
 
 ```ts
 export const cookiesMiddleware = (opts: CookiesOptions = {}) => 
@@ -34,6 +34,8 @@ export const cookiesMiddleware = (opts: CookiesOptions = {}) =>
       });
     };
 ```
+
+For an implemetation of the `RequestCookieStore` class, see [this repository](https://github.com/worker-utils/request-cookie-store).
 
 ## Usage
 What's good about this pattern is that all the weird type-foo goes into the middleware itself. Developers, for the most part, needn't
