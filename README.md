@@ -10,7 +10,7 @@ export type BaseArg = { event: FetchEvent };
 
 // Our example middleware will add a `cookieStore` field to the argument.
 export type CookiesArgs = { cookieStore: CookieStore };
-export type CookiesHandler<A extends BaseArg> = (args: A & CookiesArgs) => Awaitable<Response>;
+export type CookiesHandler<A extends BaseArg> = (args: A & CookiesArgs) => Promise<Response>;
 
 export interface CookiesOptions { /* user-provided options for middleware */}
 ```
