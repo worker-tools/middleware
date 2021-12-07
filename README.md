@@ -1,4 +1,4 @@
-# @werker/middleware
+# @worker-tools/middleware
 
 Placeholder for a future middleware solutions that work in worker environments such as Cloudflare Workers.
 
