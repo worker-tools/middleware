@@ -147,7 +147,7 @@ const parseSessionCookie = <T>(value: string) =>
 
 async function getCookieSessionProxy<S extends AnyRecord = AnyRecord>(
   cookieVal: string | null | undefined,
-  _ctx: { waitUntil: (f: any) => void },
+  ctx: { waitUntil?: (f: any) => void },
   { defaultSession, signal }: CookieSessionOptions & { signal: AbortSignal },
 ): Promise<[null, S, { dirty: boolean }]> {
   const obj = (cookieVal && parseSessionCookie<S>(cookieVal)) || defaultSession;
@@ -175,7 +175,7 @@ async function getCookieSessionProxy<S extends AnyRecord = AnyRecord>(
 
 async function getStorageSessionProxy<S extends AnyRecord = AnyRecord>(
   cookieVal: string | null | undefined,
-  ctx: { waitUntil: (f: any) => void },
+  ctx: { waitUntil?: (f: any) => void },
   { storage, expirationTtl, defaultSession }: Required<StorageSessionOptions<S>>,
 ): Promise<[UUID, S, { dirty: boolean }]> {
   const sessionId = parseUUID(cookieVal) || new UUID();
@@ -189,7 +189,7 @@ async function getStorageSessionProxy<S extends AnyRecord = AnyRecord>(
   let nr = 0;
   const persist = () => {
     const capturedNr = ++nr;
-    ctx.waitUntil((async () => {
+    ctx.waitUntil?.((async () => {
       await new Promise(r => setTimeout(r)); // await end of microtask
       if (capturedNr === nr) { // no other invocations since
         await storage.set(sessionId, obj, { expirationTtl });

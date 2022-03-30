@@ -21,7 +21,7 @@ export interface Context {
   /**
    * TODO
    */
-  waitUntil: (f: any) => void,
+  waitUntil?: (f: any) => void,
 }
 
 export type ResponseEffect = (r: Response) => Awaitable<Response>
@@ -35,3 +35,4 @@ export * from './content-negotiation';
 export * from './cookies';
 export * from './cors';
 export * from './session';
+export * from './caching';

@@ -21,11 +21,13 @@
     "clean": "rm -f *.d.ts *.js *.js.map *.d.ts.map",
     "test": "echo \"Error: no test specified\" && exit 0",
     "build": "tsc -d",
+    "watch": "tsc -d -w",
     "prepack": "npm run clean && npm run build"
   },
   "author": "Florian Klampfer <mail@qwtel.com> (https://qwtel.com/)",
   "license": "MIT",
   "dependencies": {
+    "@js-temporal/polyfill": "^0.4.0",
     "@worker-tools/encrypted-cookie-store": "workspace:^0.2.0",
     "@worker-tools/extendable-promise": "workspace:^0.0.1",
     "@worker-tools/request-cookie-store": "workspace:^0.4.3",
