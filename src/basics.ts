@@ -26,6 +26,6 @@ export const basics = () => async <X extends Context>(ax: Awaitable<X>): Promise
   const url = new URL(request.url)
   const { pathname, searchParams } = url;
   const userAgent = headers.get('user-agent') ?? '';
-  const params = match.groups;
+  const params = match?.groups ?? {};
   return Object.assign(x, { headers, method, url, pathname, searchParams, userAgent, params })
 }

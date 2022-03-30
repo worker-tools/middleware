@@ -1,6 +1,7 @@
 import { CookieStore, RequestCookieStore } from "@worker-tools/request-cookie-store";
 import { SignedCookieStore, DeriveOptions } from "@worker-tools/signed-cookie-store";
 import { EncryptedCookieStore } from "@worker-tools/encrypted-cookie-store";
+import { ResolvablePromise } from '@worker-tools/resolvable-promise';
 import { forbidden } from "@worker-tools/response-creators";
 
 import { Awaitable } from "./utils/common-types";
@@ -31,20 +32,24 @@ export interface CookiesOptions extends DeriveOptions {
 
 export const unsignedCookies = () => async <X extends Context>(ax: Awaitable<X>): Promise<X & UnsignedCookiesContext> => {
   const x = await ax;
-  const unsignedCookieStore = new RequestCookieStore(x.request);
+  const cookieStore = new RequestCookieStore(x.request);
+  const requestDuration = new ResolvablePromise<void>();
+  const unsignedCookieStore = new MiddlewareCookieStore(cookieStore, requestDuration)
   const unsignedCookies = await cookiesFrom(unsignedCookieStore);
+  const nx = Object.assign(x, { unsignedCookies, unsignedCookieStore })
   x.effects.push(response => {
     const { status, statusText, body, headers } = response;
+    requestDuration.resolve();
     return new Response(body, {
       status,
       statusText,
       headers: [
         ...headersSetCookieFix(headers),
-        ...unsignedCookieStore.headers,
+        ...cookieStore.headers,
       ],
     });
   })
-  return Object.assign(x, { unsignedCookies, unsignedCookieStore })
+  return nx;
 }
 
 export const cookies = (opts: CookiesOptions) => {
@@ -56,9 +61,10 @@ export const cookies = (opts: CookiesOptions) => {
     const x = await ax;
     const request = x.request;
     const cookieStore = new RequestCookieStore(request);
+    const requestDuration = new ResolvablePromise<void>();
     const signedCookieStore = new MiddlewareCookieStore(new SignedCookieStore(cookieStore, await keyPromise, {
       keyring: opts.keyring
-    }));
+    }), requestDuration);
 
     let signedCookies: Cookies;
     try {
@@ -74,6 +80,7 @@ export const cookies = (opts: CookiesOptions) => {
 
     x.effects.push(async response => {
       // Wait for all set cookie promises to settle
+      requestDuration.resolve();
       await unsettle(signedCookieStore.allSettledPromise);
 
       return new Response(response.body, {
@@ -98,9 +105,10 @@ export const addEncryptedCookies = (opts: CookiesOptions) => {
     const x = await ax;
     const request = x.request;
     const cookieStore = new RequestCookieStore(request);
+    const requestDuration = new ResolvablePromise<void>();
     const encryptedCookieStore = new MiddlewareCookieStore(new EncryptedCookieStore(cookieStore, await keyPromise, {
       keyring: opts.keyring
-    }));
+    }), requestDuration);
 
     let encryptedCookies: Cookies;
     try {
@@ -116,6 +124,7 @@ export const addEncryptedCookies = (opts: CookiesOptions) => {
 
     x.effects.push(async response => {
       // Wait for all set cookie promises to settle
+      requestDuration.resolve();
       await unsettle(encryptedCookieStore.allSettledPromise);
 
       return new Response(response.body, {

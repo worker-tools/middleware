@@ -21,9 +21,9 @@ function decodeCookieValue(item: CookieListItem | null) {
 export class MiddlewareCookieStore implements CookieStore {
   #promise: ExtendablePromise<void>;
   #store: CookieStore;
-  constructor(store: CookieStore) {
+  constructor(store: CookieStore, requestDuration: Promise<void>) {
     this.#store = store;
-    this.#promise = new ExtendablePromise<void>();
+    this.#promise = new ExtendablePromise<void>(requestDuration);
   }
   get(name?: string): Promise<CookieListItem | null>;
   get(options?: CookieStoreGetOptions): Promise<CookieListItem | null>;
@@ -38,12 +38,17 @@ export class MiddlewareCookieStore implements CookieStore {
   set(name: string, value: string): Promise<void>;
   set(options: CookieInit): Promise<void>;
   async set(name: string | CookieInit, value?: string): Promise<void> {
+    let res: Promise<void>;
     if (typeof name === 'string' && typeof value === 'string') {
-      const res = this.#store.set(encodeURIComponent(name), encodeURIComponent(value));
-      this.#promise.waitUntil(res);
-      return res;
-    }
-    throw Error('Overload not implemented')
+      res = this.#store.set(encodeURIComponent(name), encodeURIComponent(value));
+    } else if (name && typeof name === 'object') {
+      const options = name;
+      options.name = encodeURIComponent(options.name)
+      options.value = encodeURIComponent(options.value)
+      res = this.#store.set(options);
+    } else throw Error('Illegal invocation');
+    this.#promise.waitUntil(res);
+    return res;
   }
   delete(name: string): Promise<void>;
   delete(options: CookieStoreDeleteOptions): Promise<void>;
@@ -65,11 +70,12 @@ export class MiddlewareCookieStore implements CookieStore {
     this.#store.removeEventListener(type, callback, options);
   }
   get settled() { return this.#promise.settled }
-  get allSettledPromise() { return this.#promise }
+  get allSettledPromise() { return Promise.resolve(this.#promise) }
 
   /**
    * If you've made changes to the store and would like to access the current cookies as an object, 
    * it is provided as a promise here (TODO:)
+   * @deprecated This method might change names
    */
   get updatedCookies(): Promise<Cookies> {
     return cookiesFrom(this)

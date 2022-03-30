@@ -3,6 +3,9 @@ export class AppendOnlyList<T> {
   constructor() {
     this.#arr = [];
   }
+  get length() {
+    return this.#arr.length;
+  }
   toString(): string {
     return this.#arr.toString();
   }
