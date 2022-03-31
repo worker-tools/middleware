@@ -4,7 +4,7 @@ import { Base64Decoder, Base64Encoder } from 'base64-encoding';
 import { Encoder as BinaryEncoder, Decoder as BinaryDecoder } from 'msgpackr';
 // import { Encoder as BinaryEncoder, Decoder as BinaryDecoder } from 'cbor-x';
 
-import { Context, UnsignedCookiesContext, CookiesContext } from './index';
+import { Context, UnsignedCookiesContext, SignedCookiesContext } from './index';
 import { Awaitable } from './utils/common-types';
 import { EncryptedCookiesContext } from './cookies';
 
@@ -13,17 +13,20 @@ const parseUUID = (x?: string | null) => x != null ? new UUID(new Base64Decoder(
 
 type AnyRecord = Record<any, any>;
 
-export type AnyCookieContext = Context & (EncryptedCookiesContext | CookiesContext | UnsignedCookiesContext);
+export type AnyCookieContext = Context & (EncryptedCookiesContext | SignedCookiesContext | UnsignedCookiesContext);
 
-export type SessionContext<S extends AnyRecord = AnyRecord> = { session: S };
-
-export interface StorageSessionOptions<S extends AnyRecord = AnyRecord> extends CookieSessionOptions<S> {
-  /** The storage area where to persist the session objects. */
-  storage: StorageArea,
+interface SessionContext<S extends AnyRecord = AnyRecord> { 
+  session: S 
+}
+export interface CookieSessionContext<S extends AnyRecord = AnyRecord> extends SessionContext<S> {
+  cookieSession: S
+}
+export interface StorageSessionContext<S extends AnyRecord = AnyRecord> extends SessionContext<S> {
+  storageSession: S
 }
 
 export interface CookieSessionOptions<S extends AnyRecord = AnyRecord> {
-  /** You can override the name of the session cookie. Defaults to `sid`. */
+  /** The name of the session cookie. Defaults to `sid`. */
   cookieName?: string,
 
   /** Session expiration time in seconds. Defaults to five minutes. */
@@ -33,22 +36,31 @@ export interface CookieSessionOptions<S extends AnyRecord = AnyRecord> {
   defaultSession?: S,
 }
 
+export interface StorageSessionOptions<S extends AnyRecord = AnyRecord> extends CookieSessionOptions<S> {
+  /** The storage area where to persist the session objects. */
+  storage: StorageArea,
+}
+
 /**
- * Cookie session middleware for worker environments.
+ * Cookie session middleware for worker environments. 
  * 
  * Requires a cookie store, preferably encrypted or signed.
+ * 
+ * Important: This will serialize the entire session data and store it in a cookie. It is sent with every request!
+ * Only applicable for small session objects. Use `withStorageSession` for a traditional, KV store-backed session.
  */
-export function cookieSession<S extends AnyRecord = AnyRecord>(
+export function withCookieSession<S extends AnyRecord = AnyRecord>(
   { defaultSession = {}, cookieName = 'session', expirationTtl = 5 * 60 }: CookieSessionOptions = {}
-): <X extends AnyCookieContext>(ax: Awaitable<X>) => Promise<X & SessionContext> {
+): <X extends AnyCookieContext>(ax: Awaitable<X>) => Promise<X & CookieSessionContext> {
   return async ax => {
     const ctx = await ax;
     const { encryptedCookies, encryptedCookieStore } = ctx as EncryptedCookiesContext;
-    const { cookies: signedCookies, cookieStore: signedCookieStore } = ctx as CookiesContext;
-    const { unsignedCookies: baseCookies, unsignedCookieStore: baseCookieStore } = ctx as UnsignedCookiesContext;
-    // TODO: configure preference?
-    const cookieStore = encryptedCookieStore || signedCookieStore || baseCookieStore;
-    const cookies = encryptedCookies || signedCookies || baseCookies;
+    const { signedCookies, signedCookieStore } = ctx as SignedCookiesContext;
+    const { unsignedCookies, unsignedCookieStore } = ctx as UnsignedCookiesContext;
+
+    // TODO: make preference configurable?
+    const cookieStore = encryptedCookieStore ?? signedCookieStore ?? unsignedCookieStore;
+    const cookies = encryptedCookies ?? signedCookies ?? unsignedCookies;
 
     const controller = new AbortController();
 
@@ -59,7 +71,7 @@ export function cookieSession<S extends AnyRecord = AnyRecord>(
       signal: controller.signal,
     });
 
-    const newContext =  Object.assign(ctx, { session })
+    const newContext =  Object.assign(ctx, { session, cookieSession: session })
 
     ctx.effects.push(async response => {
       // Indicate that cookie session can no longer be modified.
@@ -84,22 +96,18 @@ export function cookieSession<S extends AnyRecord = AnyRecord>(
 /**
  * Session middleware for worker environments.
  * 
- * The session object is a POJO that is persisted at the end of the application handler. 
- * It will implicitly call .waitUntil` to prevent the worker from shuting down before the operation has finished.
- * 
- * Users need to provide a `StorageArea` to persist the session between requests. 
+ * Need to provide a `StorageArea` to persist the session between requests. 
  * There are implementations for both browsers (IndexedDB-backed) and Cloudflare Workers (KV storage backed) available.
  * 
- * Issues
- * - Will "block" until session object is retrieved from KV => provide "unyielding" version that returns a promise?
  */
-export function storageSession<S extends AnyRecord = AnyRecord>(
+// FIXME: Will "block" until session object is retrieved from KV => provide "unyielding" version that returns a promise?
+export function withStorageSession<S extends AnyRecord = AnyRecord>(
   { storage, defaultSession = {}, cookieName = 'sid', expirationTtl = 5 * 60 }: StorageSessionOptions
-): <X extends AnyCookieContext>(ax: Awaitable<X>) => Promise<X & SessionContext> {
+): <X extends AnyCookieContext>(ax: Awaitable<X>) => Promise<X & StorageSessionContext> {
     return async ax => {
       const ctx = await ax;
       const { encryptedCookies, encryptedCookieStore } = ctx as EncryptedCookiesContext;
-      const { cookies: signedCookies, cookieStore: signedCookieStore } = ctx as CookiesContext;
+      const { cookies: signedCookies, cookieStore: signedCookieStore } = ctx as SignedCookiesContext;
       const { unsignedCookies, unsignedCookieStore } = ctx as UnsignedCookiesContext;
       const cookieStore = encryptedCookieStore || signedCookieStore || unsignedCookieStore;
       const cookies = encryptedCookies || signedCookies || unsignedCookies;
@@ -111,7 +119,7 @@ export function storageSession<S extends AnyRecord = AnyRecord>(
         defaultSession,
       });
 
-      const newContext = Object.assign(ctx, { session })
+      const newContext = Object.assign(ctx, { session, storageSession: session })
 
       ctx.effects.push(response => {
         // no await necessary
@@ -178,8 +186,8 @@ async function getStorageSessionProxy<S extends AnyRecord = AnyRecord>(
   ctx: { waitUntil?: (f: any) => void },
   { storage, expirationTtl, defaultSession }: Required<StorageSessionOptions<S>>,
 ): Promise<[UUID, S, { dirty: boolean }]> {
-  const sessionId = parseUUID(cookieVal) || new UUID();
-  const obj = (await storage.get<S>(sessionId)) || defaultSession;
+  const sessionId = parseUUID(cookieVal) ?? new UUID();
+  const obj = (await storage.get<S>(sessionId)) ?? defaultSession;
 
   const flag = { dirty: false };
 

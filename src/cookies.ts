@@ -22,21 +22,39 @@ export async function cookiesFrom(cookieStore: CookieStore): Promise<Cookies> {
  */
 export type Cookies = { readonly [key: string]: string };
 
-export type UnsignedCookiesContext = { unsignedCookieStore: CookieStore, unsignedCookies: Cookies };
-export type CookiesContext = { cookieStore: CookieStore, cookies: Cookies };
-export type EncryptedCookiesContext = { encryptedCookieStore: CookieStore, encryptedCookies: Cookies };
+interface withUnsignedCookies {
+  cookieStore: CookieStore, 
+  cookies: Cookies, 
+}
+export interface UnsignedCookiesContext extends withUnsignedCookies { 
+  unsignedCookieStore: CookieStore, 
+  unsignedCookies: Cookies 
+};
+export interface SignedCookiesContext extends withUnsignedCookies { 
+  signedCookieStore: CookieStore, 
+  signedCookies: Cookies,
+};
+export interface EncryptedCookiesContext extends withUnsignedCookies { 
+  encryptedCookieStore: CookieStore, 
+  encryptedCookies: Cookies,
+};
 
 export interface CookiesOptions extends DeriveOptions {
   keyring?: readonly CryptoKey[];
 };
 
-export const unsignedCookies = () => async <X extends Context>(ax: Awaitable<X>): Promise<X & UnsignedCookiesContext> => {
+export const withUnsignedCookies = () => async <X extends Context>(ax: Awaitable<X>): Promise<X & UnsignedCookiesContext> => {
   const x = await ax;
   const cookieStore = new RequestCookieStore(x.request);
   const requestDuration = new ResolvablePromise<void>();
   const unsignedCookieStore = new MiddlewareCookieStore(cookieStore, requestDuration)
   const unsignedCookies = await cookiesFrom(unsignedCookieStore);
-  const nx = Object.assign(x, { unsignedCookies, unsignedCookieStore })
+  const nx = Object.assign(x, { 
+    cookieStore: unsignedCookieStore, 
+    cookies: unsignedCookies, 
+    unsignedCookieStore, 
+    unsignedCookies, 
+  })
   x.effects.push(response => {
     const { status, statusText, body, headers } = response;
     requestDuration.resolve();
@@ -52,12 +70,14 @@ export const unsignedCookies = () => async <X extends Context>(ax: Awaitable<X>)
   return nx;
 }
 
-export const cookies = (opts: CookiesOptions) => {
+export const withSignedCookies = (opts: CookiesOptions) => {
   // TODO: options to provide own cryptokey??
   // TODO: What if secret isn't known at initialization (e.g. Cloudflare Workers)
+  if (!opts.secret) throw Error('Secret missing');
+
   const keyPromise = SignedCookieStore.deriveCryptoKey(opts);
 
-  return async <X extends Context>(ax: Awaitable<X>): Promise<X & CookiesContext> => {
+  return async <X extends Context>(ax: Awaitable<X>): Promise<X & SignedCookiesContext> => {
     const x = await ax;
     const request = x.request;
     const cookieStore = new RequestCookieStore(request);
@@ -76,6 +96,8 @@ export const cookies = (opts: CookiesOptions) => {
     const nx = Object.assign(x, {
       cookieStore: signedCookieStore,
       cookies: signedCookies,
+      signedCookieStore,
+      signedCookies,
     })
 
     x.effects.push(async response => {
@@ -96,9 +118,11 @@ export const cookies = (opts: CookiesOptions) => {
   };
 }
 
-export const addEncryptedCookies = (opts: CookiesOptions) => {
+export const withEncryptedCookies = (opts: CookiesOptions) => {
   // TODO: options to provide own cryptokey??
   // TODO: What if secret isn't known at initialization (e.g. Cloudflare Workers)
+  if (!opts.secret) throw Error('Secret missing');
+
   const keyPromise = EncryptedCookieStore.deriveCryptoKey(opts);
 
   return async <X extends Context>(ax: Awaitable<X>): Promise<X & EncryptedCookiesContext> => {
@@ -118,6 +142,8 @@ export const addEncryptedCookies = (opts: CookiesOptions) => {
     }
 
     const nx = Object.assign(x, {
+      cookieStore: encryptedCookieStore,
+      cookies: encryptedCookies,
       encryptedCookieStore,
       encryptedCookies,
     })

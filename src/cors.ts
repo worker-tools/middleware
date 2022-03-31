@@ -21,7 +21,12 @@ export interface CORSOptions {
 /**
  * A CORS middleware that gives clients exactly the permissions they ask for.
  */
-export const cors = (opt: CORSOptions = {}) => async <X extends Context>(ax: Awaitable<X>): Promise<X> => {
+// FIXME: separate into two middlewares? 
+//   One that simply gives all permissions and another where all options are required.
+//   Should default to allowing everything if the dev forgets to set the key in the options, probably.
+// FIXME: Figure out how to deal with multiple cors middlewares. 
+//   Should probably append (if not present) instead of ignore all but the first (last?)
+export const withCors = (opt: CORSOptions = {}) => async <X extends Context>(ax: Awaitable<X>): Promise<X> => {
   const x = await ax;
   const req = x.request;
   x.effects.push(res => {

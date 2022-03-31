@@ -14,9 +14,9 @@ export interface CacheOptions {
 const SECONDS = { unit: 'second', relativeTo: '1970-01-01' } as Temporal.DurationTotalOf;
 
 /**
- * A CORS middleware that gives clients exactly the permissions they ask for.
+ * TODO: Implement request-response
  */
-export const caching = (opt: CacheOptions = {}) => async <X extends Context>(ax: Awaitable<X>): Promise<X> => {
+export const withCaching = (opt: CacheOptions = {}) => async <X extends Context>(ax: Awaitable<X>): Promise<X> => {
   const x = await ax;
   const req = x.request;
   
@@ -24,6 +24,7 @@ export const caching = (opt: CacheOptions = {}) => async <X extends Context>(ax:
     res.headers.set('cache-control', opt.cacheControl ?? '')
 
     if (typeof opt.maxAge === 'number') {
+      // FIXME: check for global DEBUG var? Check process.env ??
       if (opt.maxAge > 31536000) console.warn(`Provided maxAge appears to be too large. Perhaps you meant ${opt.maxAge / 1000}? maxAge is defined in seconds!`)
       res.headers.append('cache-control', `max-age=${opt.maxAge}`)
     } else if (opt.maxAge) {

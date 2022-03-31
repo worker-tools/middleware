@@ -11,6 +11,7 @@ export interface BasicsContext {
   searchParams: URLSearchParams,
   userAgent: string,
   params: { [key: string]: string }
+  query: { [key: string]: string }
 }
 
 // const mk = (s: URL) => {
@@ -18,7 +19,7 @@ export interface BasicsContext {
 //   return [dirname, filename]
 // }
 
-export const basics = () => async <X extends Context>(ax: Awaitable<X>): Promise<X & BasicsContext> => {
+export const withBasics = () => async <X extends Context>(ax: Awaitable<X>): Promise<X & BasicsContext> => {
   const x = await ax;
   const { request, match } = x;
   const { headers } = request;
@@ -26,6 +27,7 @@ export const basics = () => async <X extends Context>(ax: Awaitable<X>): Promise
   const url = new URL(request.url)
   const { pathname, searchParams } = url;
   const userAgent = headers.get('user-agent') ?? '';
-  const params = match?.groups ?? {};
-  return Object.assign(x, { headers, method, url, pathname, searchParams, userAgent, params })
+  const params = match?.pathname.groups ?? {};
+  const query = Object.fromEntries(searchParams)
+  return Object.assign(x, { headers, method, url, pathname, searchParams, userAgent, params, query })
 }

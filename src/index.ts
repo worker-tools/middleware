@@ -1,8 +1,12 @@
-import { URLPatternComponentResult } from "urlpattern-polyfill/dist/url-pattern.interfaces";
+import { URLPatternComponentResult, URLPatternResult } from "urlpattern-polyfill/dist/url-pattern.interfaces";
 import { AppendOnlyList } from "./utils/append-only-list";
 import { Awaitable,  } from "./utils/common-types";
 
 export { pipe as combine } from 'ts-functional-pipe';
+
+export type ResponseEffect = (r: Response) => Awaitable<Response>
+
+export class EffectsList extends AppendOnlyList<ResponseEffect> {}
 
 export interface Context { 
   request: Request, 
@@ -15,21 +19,24 @@ export interface Context {
   effects: AppendOnlyList<ResponseEffect>, 
 
   /**
-   * The matched pathname
+   * The URL pattern match that caused this handler to run. See the URL Pattern API for more.
    */
-  match?: URLPatternComponentResult,
+  match?: URLPatternResult,
 
   /**
-   * TODO
+   * Only present if the worker environment supports it. Might be a noop in certain cases.
    */
   waitUntil?: (f: any) => void,
+
+  /**
+   * Only available if the router is used via `fetchEventCallback`.
+   * Many Worker Environments such as Deno an CF module workers don't provide fetch events. 
+   */
+  event?: FetchEvent
 }
 
-export type ResponseEffect = (r: Response) => Awaitable<Response>
-export class EffectsList extends AppendOnlyList<ResponseEffect> {}
-
 /**
- * @deprecated Function might change names
+ * @deprecated Function might change name
  * @param effects 
  * @param response 
  * @returns 
