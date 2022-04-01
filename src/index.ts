@@ -24,15 +24,22 @@ export interface Context {
   match?: URLPatternResult,
 
   /**
-   * Only present if the worker environment supports it. Might be a noop in certain cases.
+   * TODO
    */
-  waitUntil?: (f: any) => void,
+  waitUntil: (f: any) => void,
 
   /**
    * Only available if the router is used via `fetchEventCallback`.
    * Many Worker Environments such as Deno an CF module workers don't provide fetch events. 
    */
   event?: FetchEvent
+
+  /** Might be present based on environment */
+  env?: any
+  /** Might be present based on environment */
+  ctx?: any
+  /** Might be present based on environment */
+  connInfo?: any
 }
 
 /**
