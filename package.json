@@ -9,6 +9,7 @@
     ".": "./index.js"
   },
   "files": [
+    "utils",
     "src",
     "*.js*",
     "*.d.ts*"
