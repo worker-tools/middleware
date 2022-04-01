@@ -20,7 +20,7 @@ export const withCaching = (opt: CacheOptions = {}) => async <X extends Context>
   const x = await ax;
   const req = x.request;
   
-  x.effects.push(res => {
+  x.effects!.push(res => {
     res.headers.set('cache-control', opt.cacheControl ?? '')
 
     if (typeof opt.maxAge === 'number') {

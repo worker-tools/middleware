@@ -73,7 +73,7 @@ export function withCookieSession<S extends AnyRecord = AnyRecord>(
 
     const newContext =  Object.assign(ctx, { session, cookieSession: session })
 
-    ctx.effects.push(async response => {
+    ctx.effects!.push(async response => {
       // Indicate that cookie session can no longer be modified.
       controller.abort();
 
@@ -121,7 +121,7 @@ export function withStorageSession<S extends AnyRecord = AnyRecord>(
 
       const newContext = Object.assign(ctx, { session, storageSession: session })
 
-      ctx.effects.push(response => {
+      ctx.effects!.push(response => {
         // no await necessary
         if (!cookies[cookieName]) cookieStore.set({
           name: cookieName,

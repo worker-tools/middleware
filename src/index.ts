@@ -11,12 +11,17 @@ export class EffectsList extends AppendOnlyList<ResponseEffect> {}
 export interface Context { 
   request: Request, 
 
+  /**
+   * TODO
+   */
+  waitUntil: (f: any) => void,
+
   /** 
-   * A list of effects (transforms?) applied to the `Response` after the application handler completes.
-   * Middleware can add effects to the list, but application handlers should ignore it. 
+   * A list of effects/transforms applied to the `Response` after the application handler completes.
+   * Middleware can add effects to the list. Application handlers should ignore it. 
    * @deprecated Prop might change name
    */
-  effects: AppendOnlyList<ResponseEffect>, 
+  effects?: AppendOnlyList<ResponseEffect>, 
 
   /**
    * The URL pattern match that caused this handler to run. See the URL Pattern API for more.
@@ -24,20 +29,17 @@ export interface Context {
   match?: URLPatternResult,
 
   /**
-   * TODO
-   */
-  waitUntil: (f: any) => void,
-
-  /**
-   * Only available if the router is used via `fetchEventCallback`.
+   * Only available if the router is used via `fetchEventListener`.
    * Many Worker Environments such as Deno an CF module workers don't provide fetch events. 
    */
   event?: FetchEvent
 
   /** Might be present based on environment */
   env?: any
+
   /** Might be present based on environment */
   ctx?: any
+
   /** Might be present based on environment */
   connInfo?: any
 }

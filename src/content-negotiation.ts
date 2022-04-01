@@ -106,7 +106,7 @@ export function withContentNegotiation<
 
     if (throws && headers.has(ACCEPT) && types && !type) throw notAcceptable();
 
-    ctx.effects.push(response => {
+    ctx.effects!.push(response => {
       // If the server accepts more than 1 option, we set the vary header for correct caching
       if (types?.length ?? 0 > 1) response.headers.append(VARY, ACCEPT);
       return response;
@@ -144,7 +144,7 @@ export function withLanguageNegotiation<
     // TODO: how to handle status errors in middleware??
     if (throws && headers.has(ACCEPT_LANGUAGE) && languages && !language) throw notAcceptable();
 
-    ctx.effects.push(response => {
+    ctx.effects!.push(response => {
       if (languages?.length ?? 0 > 1) response.headers.append(VARY, ACCEPT_LANGUAGE);
       return response
     })
@@ -181,7 +181,7 @@ export function withEncodingNegotiation<
     // TODO: how to handle status errors in middleware??
     if (throws && headers.has(ACCEPT_ENCODING) && encodings && !encoding) throw notAcceptable();
 
-    ctx.effects.push(response => {
+    ctx.effects!.push(response => {
       if (encodings?.length ?? 0 > 1) response.headers.append(VARY, ACCEPT_ENCODING);
       return response
     })

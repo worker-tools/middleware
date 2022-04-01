@@ -121,7 +121,7 @@ describe('signed cookies', () => {
     expect(cookies).toBe(signedCookies) // last one "wins"
   })
 
-  test('ignored unsigned cookies to be ignored', async () => {
+  test('unsigned cookies to be ignored', async () => {
     const { cookies, cookieStore, effects } = await signedCookiesFn({ request, effects: [] })
     expect(Object.keys(cookies).length).toBe(0)
     expect(cookieStore.get('foo')).resolves.toBeNull
@@ -143,7 +143,7 @@ describe('signed cookies', () => {
   test('throws on forged signature', async () => {
     const forgedRequest = new Request('/', {
       headers: {
-        'Cookie': 'foo=bar; foo.sig=Sd_7Nz01uxBspv_y6Lqs8gLXXYEe8iFEN8fXXXXXXXX',
+        'Cookie': 'foo=bar; foo.sig=Sd_7Nz01uxBspv_y6Lqs8gLXXYEe8iFEN8fAAAAAAAA',
       },
     })
     expect(signedCookiesFn({ request: forgedRequest, effects: [] })).rejects.toBeInstanceOf(Response)
@@ -169,5 +169,6 @@ describe('signed cookies', () => {
     cookieStore.set('foo', 'bar')
     const setCookie = (await executeEffects(effects, ok())).headers.get('set-cookie')
     expect(setCookie).not.toContain('foo.sig=Sd_7Nz01uxBspv_y6Lqs8gLXXYEe8iFEN8fNouVNLzI')
+    expect(setCookie).toContain('foo.sig=-VaHv2_MfLKX42ys3uhI9fa9XhpMVmi5l7PdPAGGA9c')
   })
 })

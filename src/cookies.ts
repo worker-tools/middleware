@@ -55,7 +55,7 @@ export const withUnsignedCookies = () => async <X extends Context>(ax: Awaitable
     unsignedCookieStore, 
     unsignedCookies, 
   })
-  x.effects.push(response => {
+  x.effects!.push(response => {
     const { status, statusText, body, headers } = response;
     requestDuration.resolve();
     return new Response(body, {
@@ -100,7 +100,7 @@ export const withSignedCookies = (opts: CookiesOptions) => {
       signedCookies,
     })
 
-    x.effects.push(async response => {
+    x.effects!.push(async response => {
       // Wait for all set cookie promises to settle
       requestDuration.resolve();
       await unsettle(signedCookieStore.allSettledPromise);
@@ -148,7 +148,7 @@ export const withEncryptedCookies = (opts: CookiesOptions) => {
       encryptedCookies,
     })
 
-    x.effects.push(async response => {
+    x.effects!.push(async response => {
       // Wait for all set cookie promises to settle
       requestDuration.resolve();
       await unsettle(encryptedCookieStore.allSettledPromise);
