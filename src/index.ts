@@ -56,6 +56,7 @@ export function executeEffects(effects: EffectsList, response: Awaitable<Respons
 
 export * from './basics';
 export * from './content-negotiation';
+export * from './body';
 export * from './cookies';
 export * from './cors';
 export * from './session';

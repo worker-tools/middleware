@@ -1,5 +1,5 @@
-import { Awaitable } from "./utils/common-types";
-import { Context } from "./index";
+import type { Awaitable } from "./utils/common-types";
+import type { Context } from "./index";
 
 export type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
 

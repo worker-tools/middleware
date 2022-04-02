@@ -4,9 +4,9 @@ import { Base64Decoder, Base64Encoder } from 'base64-encoding';
 import { Encoder as BinaryEncoder, Decoder as BinaryDecoder } from 'msgpackr';
 // import { Encoder as BinaryEncoder, Decoder as BinaryDecoder } from 'cbor-x';
 
-import { Context, UnsignedCookiesContext, SignedCookiesContext } from './index';
-import { Awaitable } from './utils/common-types';
-import { EncryptedCookiesContext } from './cookies';
+import type { Context, UnsignedCookiesContext, SignedCookiesContext } from './index';
+import type { Awaitable } from './utils/common-types';
+import type { EncryptedCookiesContext } from './cookies';
 
 const shortenId = (x: Uint8Array) => new Base64Encoder().encode(x);
 const parseUUID = (x?: string | null) => x != null ? new UUID(new Base64Decoder().decode(x)) : null

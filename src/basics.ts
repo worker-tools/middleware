@@ -1,6 +1,6 @@
 import type { Method } from "tiny-request-router";
-import { Awaitable } from "./utils/common-types";
-import { Context } from "./index";
+import type { Awaitable } from "./utils/common-types";
+import type { Context } from "./index";
 
 export interface BasicsContext { 
   request: Request,
@@ -12,6 +12,7 @@ export interface BasicsContext {
   userAgent: string,
   params: { [key: string]: string }
   query: { [key: string]: string }
+  ip?: string
 }
 
 // const mk = (s: URL) => {
@@ -27,7 +28,8 @@ export const withBasics = () => async <X extends Context>(ax: Awaitable<X>): Pro
   const url = new URL(request.url)
   const { pathname, searchParams } = url;
   const userAgent = headers.get('user-agent') ?? '';
+  const ip = headers.get('x-forwarded-for') ?? x.connInfo?.remoteAddr?.hostname ?? '';
   const params = match?.pathname.groups ?? {};
   const query = Object.fromEntries(searchParams)
-  return Object.assign(x, { headers, method, url, pathname, searchParams, userAgent, params, query })
+  return Object.assign(x, { headers, method, url, pathname, searchParams, userAgent, ip, params, query })
 }

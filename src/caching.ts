@@ -1,6 +1,6 @@
 import type { Temporal } from '@js-temporal/polyfill'
-import { Awaitable } from "./utils/common-types";
-import { Context } from "./index";
+import type { Awaitable } from "./utils/common-types";
+import type { Context } from "./index";
 
 export type CacheControl = 'no-cache' | 'no-store' | 'public' | 'private' | string;
 

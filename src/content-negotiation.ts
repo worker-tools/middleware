@@ -29,7 +29,7 @@ export interface ContentNegotiationOptions<
   A extends string,
   TS extends readonly T[],
   AS extends readonly A[]
-> extends Options {
+  > extends Options {
   /** The content types _provided_ by this endpoint. Not to be confused with `accepts`. */
   types?: TS,
   /** The body content types _acceptable_ to this endpoint. Not to be confused with `types`. */
@@ -37,10 +37,10 @@ export interface ContentNegotiationOptions<
 }
 
 export interface ContentNegotiationResults<T, AT> {
-  /** The best content type _acceptable to the client_. */
-  type: T | undefined,
+  /** The best content type acceptable _to the client_. */
+  type: T,
   /** The request's `Content-Type` header iff acceptable to this endpoint */
-  accepted: AT | undefined,
+  accepted: AT,
 }
 
 export interface LanguageNegotiationOptions<
@@ -48,7 +48,7 @@ export interface LanguageNegotiationOptions<
   A extends string,
   LS extends readonly L[],
   AS extends readonly A[]
-> extends Options {
+  > extends Options {
   /** The languages _provided_ by this endpoint. Not to be confused with `acceptsLanguages`. */
   languages?: LS,
   /** The languages (of the request body) _acceptable_ to this endpoint. Not to be confused with `languages`. */
@@ -56,10 +56,10 @@ export interface LanguageNegotiationOptions<
 }
 
 export interface LanguageNegotiationResults<L, AL> {
-  /** The best language _acceptable to the client_. */
-  language: L | undefined,
+  /** The best language acceptable _to the client_. */
+  language: L,
   /** The request's `Language` header if (and only if) accepted by this endpoint */
-  acceptedLanguage: AL | undefined,
+  acceptedLanguage: AL,
 }
 
 export interface EncodingNegotiationOptions<
@@ -67,17 +67,17 @@ export interface EncodingNegotiationOptions<
   A extends string,
   ES extends readonly E[],
   AS extends readonly A[]
-> extends Options {
+  > extends Options {
   /** The encodings _provided_ by this endpoint. Not to be confused with `acceptsEncodings`. */
   encodings?: ES,
   /** The body encodings _acceptable_ to this endpoint. Not to be confused with `encodings`. */
   acceptsEncodings?: AS,
 }
 export interface EncodingNegotiationResults<E, AE> {
-  /** The best encoding _acceptable to the client_. */
-  encoding: E | undefined,
+  /** The best encoding acceptable _to the client_. */
+  encoding: E,
   /** The request's `Encoding` header if (and only if) accepted by this endpoint */
-  acceptedEncoding: AE | undefined,
+  acceptedEncoding: AE,
 }
 
 export function withContentNegotiation<
@@ -101,14 +101,14 @@ export function withContentNegotiation<
     const resultT = [...negotiated.mediaTypes(headers.get(ACCEPT))]
       .filter(t => !types || types.includes(t.type as TS[number]))
       .reduce(weightSortFn, { weight: -1 } as any)
-      
+
     const type = resultT.type as TS[number]
 
     if (throws && headers.has(ACCEPT) && types && !type) throw notAcceptable();
 
     ctx.effects!.push(response => {
       // If the server accepts more than 1 option, we set the vary header for correct caching
-      if (types?.length ?? 0 > 1) response.headers.append(VARY, ACCEPT);
+      if ((types?.length ?? 0) > 1) response.headers.append(VARY, ACCEPT);
       return response;
     })
 
@@ -145,7 +145,7 @@ export function withLanguageNegotiation<
     if (throws && headers.has(ACCEPT_LANGUAGE) && languages && !language) throw notAcceptable();
 
     ctx.effects!.push(response => {
-      if (languages?.length ?? 0 > 1) response.headers.append(VARY, ACCEPT_LANGUAGE);
+      if ((languages?.length ?? 0) > 1) response.headers.append(VARY, ACCEPT_LANGUAGE);
       return response
     })
 
@@ -182,7 +182,7 @@ export function withEncodingNegotiation<
     if (throws && headers.has(ACCEPT_ENCODING) && encodings && !encoding) throw notAcceptable();
 
     ctx.effects!.push(response => {
-      if (encodings?.length ?? 0 > 1) response.headers.append(VARY, ACCEPT_ENCODING);
+      if ((encodings?.length ?? 0) > 1) response.headers.append(VARY, ACCEPT_ENCODING);
       return response
     })
 

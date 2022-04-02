@@ -10,6 +10,8 @@
     "esModuleInterop": true,
     "inlineSources": true,
     "strict": true,
+    "strictFunctionTypes": true,
+    "strictNullChecks": true,
   },
   "include": [
     "typings/*.d.ts",
