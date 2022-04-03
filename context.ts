@@ -1,5 +1,9 @@
 import { AppendOnlyList } from "./utils/append-only-list.ts";
 import { Awaitable } from "./utils/common-types.ts";
+import type { 
+  URLPatternInit, URLPatternComponentResult, URLPatternInput, URLPatternResult 
+} from 'https://esm.sh/urlpattern-polyfill@3.0.0/dist/index.js';
+export type { URLPatternInit, URLPatternComponentResult, URLPatternInput, URLPatternResult }
 
 export type ResponseEffect = (r: Response) => Awaitable<Response>
 
@@ -49,43 +53,4 @@ export interface Context {
  */
 export function executeEffects(effects: EffectsList, response: Awaitable<Response>) {
   return [...effects].reduceRight(async (response, effect) => effect(await response), response) ?? response
-}
-
-declare interface URLPatternInit {
-  protocol?: string;
-  username?: string;
-  password?: string;
-  hostname?: string;
-  port?: string;
-  pathname?: string;
-  search?: string;
-  hash?: string;
-  baseURL?: string;
-}
-
-declare interface URLPatternComponentResult {
-  input: string;
-  groups: Record<string, string>;
-}
-
-interface URLPatternResult {
-  /** The inputs provided when matching. */
-  inputs: [URLPatternInit] | [URLPatternInit, string];
-
-  /** The matched result for the `protocol` matcher. */
-  protocol: URLPatternComponentResult;
-  /** The matched result for the `username` matcher. */
-  username: URLPatternComponentResult;
-  /** The matched result for the `password` matcher. */
-  password: URLPatternComponentResult;
-  /** The matched result for the `hostname` matcher. */
-  hostname: URLPatternComponentResult;
-  /** The matched result for the `port` matcher. */
-  port: URLPatternComponentResult;
-  /** The matched result for the `pathname` matcher. */
-  pathname: URLPatternComponentResult;
-  /** The matched result for the `search` matcher. */
-  search: URLPatternComponentResult;
-  /** The matched result for the `hash` matcher. */
-  hash: URLPatternComponentResult;
 }

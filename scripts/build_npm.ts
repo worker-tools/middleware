@@ -1,22 +1,41 @@
+#!/usr/bin/env -S deno run -A
 
 // ex. scripts/build_npm.ts
 import { basename, extname } from "https://deno.land/std@0.133.0/path/mod.ts";
 import { build, emptyDir } from "https://deno.land/x/dnt/mod.ts";
 
-await emptyDir("./npm");
+import { latestVersion, copyMdFiles } from 'https://gist.githubusercontent.com/qwtel/ecf0c3ba7069a127b3d144afc06952f5/raw/20225e500beb4168c2ed44c2869acba1fb27bff3/latest-version.ts'
 
-async function latestVersion() {
-  return new TextDecoder().decode(
-    await Deno.run({ cmd: ['git', 'tag', '--sort=committerdate'], stdout: 'piped' }).output()
-  ).trim().split('\n').at(-1)?.replace(/^v/, '') ?? '0.0.1'
-} 
+await emptyDir("./npm");
 
 const name = basename(Deno.cwd())
 
-
-
 await build({
-  entryPoints: ["./index.ts"],
+  entryPoints: ["./index.ts", {
+    name: './basics',
+    path: 'basics.ts'
+  }, {
+    name: './body-parser',
+    path: 'body-parser.ts'
+  }, {
+    name: './caching',
+    path: 'caching.ts'
+  }, {
+    name: './content-negotiation',
+    path: 'content-negotiation.ts'
+  }, {
+    name: './context',
+    path: 'context.ts'
+  }, {
+    name: './cookies',
+    path: 'cookies.ts'
+  }, {
+    name: './cors',
+    path: 'cors.ts'
+  }, {
+    name: './session',
+    path: 'session.ts'
+  }],
   outDir: "./npm",
   shims: {},
   test: false,
@@ -26,6 +45,10 @@ await build({
     //   version: "^$2",
     //   subPath: "$3.js",
     // },
+    "https://esm.sh/urlpattern-polyfill@3.0.0/dist/index.js": {
+      name: "urlpattern-polyfill",
+      version: "^3.0.0",
+    },
     "https://esm.sh/cookie-store-interface@0.1.1/index.js": {
       name: "cookie-store-interface",
       version: "^0.1.1",
@@ -45,10 +68,6 @@ await build({
     "https://esm.sh/base64-encoding@0.14.3/index.js?module": {
       name: "base64-encoding",
       version: "^0.14.3",
-    },
-    "https://esm.sh/urlpattern-polyfill@3.0.0/dist/index.js?module": {
-      name: "urlpattern-polyfill",
-      version: "^3.0.0",
     },
     'https://esm.sh/ts-functional-pipe@3.1.2/ts-functional-pipe.js?module': {
       name: "ts-functional-pipe",
@@ -81,13 +100,13 @@ await build({
     bugs: {
       url: `https://github.com/worker-tools/${name}/issues`,
     },
+    homepage: `https://workers.tools/#${name}`,
+  },
+  packageManager: 'pnpm',
+  compilerOptions: {
+    sourceMap: true,
   },
 });
 
 // post build steps
-for await (const { isFile, name } of Deno.readDir('.')) {
-  if (isFile && extname(name) === '.md') {
-    console.log(`Copying ${name}...`)
-    await Deno.copyFile(name, `npm/${name}`);
-  }
-}
+await copyMdFiles()
