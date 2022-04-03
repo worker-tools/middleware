@@ -1,15 +1,14 @@
-import { CookieStore, RequestCookieStore } from "@worker-tools/request-cookie-store";
-import { SignedCookieStore, DeriveOptions } from "@worker-tools/signed-cookie-store";
-import { EncryptedCookieStore } from "@worker-tools/encrypted-cookie-store";
-import { ResolvablePromise } from '@worker-tools/resolvable-promise';
-import { forbidden } from "@worker-tools/response-creators";
+import { CookieStore, RequestCookieStore } from "../request-cookie-store/index.ts";
+import { SignedCookieStore, DeriveOptions } from "../signed-cookie-store/index.ts";
+import { EncryptedCookieStore } from "../encrypted-cookie-store/index.ts";
+import { ResolvablePromise } from '../resolvable-promise/index.ts';
+import { forbidden } from "../response-creators/index.ts";
 
-import { Awaitable } from "./utils/common-types";
-import { MiddlewareCookieStore } from "./utils/middleware-cookie-store";
-import { headersSetCookieFix } from './utils/headers-set-cookie-fix'
-import { unsettle } from "./utils/unsettle";
-
-import { Context } from "./index";
+import { Awaitable } from "./utils/common-types.ts";
+import { MiddlewareCookieStore } from "./utils/middleware-cookie-store.ts";
+import { headersSetCookieFix } from './utils/headers-set-cookie-fix.ts'
+import { unsettle } from "./utils/unsettle.ts";
+import { Context } from "./index.ts";
 
 export async function cookiesFrom(cookieStore: CookieStore): Promise<Cookies> {
   return Object.fromEntries((await cookieStore.getAll()).map(({ name, value }) => [name, value]));
@@ -55,7 +54,7 @@ export const withUnsignedCookies = () => async <X extends Context>(ax: Awaitable
     unsignedCookieStore, 
     unsignedCookies, 
   })
-  x.effects!.push(response => {
+  x.effects.push(response => {
     const { status, statusText, body, headers } = response;
     requestDuration.resolve();
     return new Response(body, {
@@ -100,7 +99,7 @@ export const withSignedCookies = (opts: CookiesOptions) => {
       signedCookies,
     })
 
-    x.effects!.push(async response => {
+    x.effects.push(async response => {
       // Wait for all set cookie promises to settle
       requestDuration.resolve();
       await unsettle(signedCookieStore.allSettledPromise);
@@ -148,7 +147,7 @@ export const withEncryptedCookies = (opts: CookiesOptions) => {
       encryptedCookies,
     })
 
-    x.effects!.push(async response => {
+    x.effects.push(async response => {
       // Wait for all set cookie promises to settle
       requestDuration.resolve();
       await unsettle(encryptedCookieStore.allSettledPromise);

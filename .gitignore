@@ -1,7 +1,1 @@
-node_modules
-cjs
-/*.js
-/*.js.map
-/*.d.ts*
-/utils
-*.tgz
+/npm

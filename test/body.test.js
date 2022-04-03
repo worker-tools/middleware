@@ -1,9 +1,9 @@
-import './fixes';
-import { jest } from '@jest/globals'
-import { ok } from '@worker-tools/response-creators';
+// import './fixes';
+// import { jest } from '@jest/globals'
+// import { ok } from '@worker-tools/response-creators';
 
-import { withBodyParser } from '../body'
-import { withContentNegotiation } from '../content-negotiation';
+// import { withBodyParser } from '../body'
+// import { withContentNegotiation } from '../content-negotiation';
 // import { withUnsignedCookies, withSignedCookies, executeEffects } from '../index.js';
 
 // import { iterHeadersSetCookieFix } from '../utils/headers-set-cookie-fix.js';
@@ -17,7 +17,7 @@ import { withContentNegotiation } from '../content-negotiation';
 //   },
 // })
 
-test('exist', () => {
-  expect(withBodyParser()).toBeDefined()
-})
+// test('exist', () => {
+//   expect(withBodyParser()).toBeDefined()
+// })
 

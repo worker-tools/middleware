@@ -1,8 +1,8 @@
 import { 
   CookieStore, CookieListItem, CookieInit, CookieList, CookieStoreDeleteOptions, CookieStoreGetOptions
-} from "@worker-tools/request-cookie-store";
-import { ExtendablePromise } from '@worker-tools/extendable-promise';
-import { Cookies, cookiesFrom } from "../cookies";
+} from "../../request-cookie-store/index.ts";
+import { ExtendablePromise } from '../../extendable-promise/index.ts';
+import { Cookies, cookiesFrom } from "../cookies.ts";
 
 function decodeCookieValue(item: CookieListItem): CookieListItem;
 function decodeCookieValue(item: CookieListItem | null): CookieListItem | null;
@@ -37,7 +37,7 @@ export class MiddlewareCookieStore implements CookieStore {
   }
   set(name: string, value: string): Promise<void>;
   set(options: CookieInit): Promise<void>;
-  async set(name: string | CookieInit, value?: string): Promise<void> {
+  set(name: string | CookieInit, value?: string): Promise<void> {
     let res: Promise<void>;
     if (typeof name === 'string' && typeof value === 'string') {
       res = this.#store.set(encodeURIComponent(name), encodeURIComponent(value));

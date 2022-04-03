@@ -1,5 +1,5 @@
-import type { Awaitable } from "./utils/common-types";
-import type { Context } from "./index";
+import type { Awaitable } from "./utils/common-types.ts";
+import type { Context } from "./index.ts";
 
 export type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
 
@@ -29,7 +29,8 @@ export interface CORSOptions {
 export const withCors = (opt: CORSOptions = {}) => async <X extends Context>(ax: Awaitable<X>): Promise<X> => {
   const x = await ax;
   const req = x.request;
-  x.effects!.push(res => {
+
+  x.effects.push(res => {
     const optOrigin = typeof opt.origin === 'string' 
       ? new URL(opt.origin) 
       : opt.origin;

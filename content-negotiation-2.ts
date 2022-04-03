@@ -1,8 +1,8 @@
-import { notAcceptable, unsupportedMediaType } from '@worker-tools/response-creators';
-import negotiated from 'negotiated';
+import { notAcceptable, unsupportedMediaType } from '../response-creators/index.ts';
+import negotiated from 'https://esm.sh/negotiated@1.0.2/negotiated.js';
 
-import { Awaitable } from './utils/common-types';
-import { Context } from './index'
+import { Awaitable } from './utils/common-types.ts';
+import { Context } from './index.ts'
 
 const weightSortFn = <X extends { weight: number }>(a: X, b: X) => a.weight >= b.weight ? a : b;
 
@@ -97,7 +97,7 @@ export function withContentTypes<T extends string, TS extends readonly T[]>(
 
     if (throws && headers.has(ACCEPT) && types && !type) throw notAcceptable();
 
-    ctx.effects!.push(response => {
+    ctx.effects.push(response => {
       // If the server accepts more than 1 option, we set the vary header for correct caching
       if ((types?.length ?? 0) > 1) response.headers.append(VARY, ACCEPT);
       return response;

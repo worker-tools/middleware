@@ -1,12 +1,12 @@
-import type { StorageArea } from 'kv-storage-interface';
-import { UUID } from 'uuid-class';
-import { Base64Decoder, Base64Encoder } from 'base64-encoding';
-import { Encoder as BinaryEncoder, Decoder as BinaryDecoder } from 'msgpackr';
+import type { StorageArea } from 'https://esm.sh/kv-storage-interface@0.2.0/kv-storage-interface.js';
+import { UUID } from 'https://esm.sh/uuid-class@0.12.3/index.js?module';
+import { Base64Decoder, Base64Encoder } from 'https://esm.sh/base64-encoding@0.14.3/index.js?module';
+import { Encoder as BinaryEncoder, Decoder as BinaryDecoder } from 'https://esm.sh/msgpackr@1.5.5/msgpackr.js';
 // import { Encoder as BinaryEncoder, Decoder as BinaryDecoder } from 'cbor-x';
 
-import type { Context, UnsignedCookiesContext, SignedCookiesContext } from './index';
-import type { Awaitable } from './utils/common-types';
-import type { EncryptedCookiesContext } from './cookies';
+import type { Context, UnsignedCookiesContext, SignedCookiesContext } from './index.ts';
+import type { Awaitable } from './utils/common-types.ts';
+import type { EncryptedCookiesContext } from './cookies.ts';
 
 const shortenId = (x: Uint8Array) => new Base64Encoder().encode(x);
 const parseUUID = (x?: string | null) => x != null ? new UUID(new Base64Decoder().decode(x)) : null
@@ -73,7 +73,7 @@ export function withCookieSession<S extends AnyRecord = AnyRecord>(
 
     const newContext =  Object.assign(ctx, { session, cookieSession: session })
 
-    ctx.effects!.push(async response => {
+    ctx.effects.push(response => {
       // Indicate that cookie session can no longer be modified.
       controller.abort();
 
@@ -121,7 +121,7 @@ export function withStorageSession<S extends AnyRecord = AnyRecord>(
 
       const newContext = Object.assign(ctx, { session, storageSession: session })
 
-      ctx.effects!.push(response => {
+      ctx.effects.push(response => {
         // no await necessary
         if (!cookies[cookieName]) cookieStore.set({
           name: cookieName,
@@ -153,16 +153,16 @@ const stringifySessionCookie = <T>(value: T) =>
 const parseSessionCookie = <T>(value: string) => 
   <T>new BinaryDecoder({ structuredClone: true }).decode(new Base64Decoder().decode(value));
 
-async function getCookieSessionProxy<S extends AnyRecord = AnyRecord>(
+function getCookieSessionProxy<S extends AnyRecord = AnyRecord>(
   cookieVal: string | null | undefined,
-  ctx: { waitUntil?: (f: any) => void },
+  _ctx: { waitUntil?: (f: any) => void },
   { defaultSession, signal }: CookieSessionOptions & { signal: AbortSignal },
 ): Promise<[null, S, { dirty: boolean }]> {
   const obj = (cookieVal && parseSessionCookie<S>(cookieVal)) || defaultSession;
 
   const flag = { dirty: false };
 
-  return [null, new Proxy(<any>obj, {
+  return Promise.resolve([null, new Proxy(<any>obj, {
     set(target, prop, value) {
       if (signal.aborted)
         throw Error('Headers already sent, session can no longer be modified!');
@@ -178,7 +178,7 @@ async function getCookieSessionProxy<S extends AnyRecord = AnyRecord>(
       delete target[prop];
       return true;
     },
-  }), flag];
+  }), flag]);
 }
 
 async function getStorageSessionProxy<S extends AnyRecord = AnyRecord>(

@@ -1,6 +1,6 @@
-import type { Method } from "tiny-request-router";
-import type { Awaitable } from "./utils/common-types";
-import type { Context } from "./index";
+// import type { Method } from "tiny-request-router";
+import type { Awaitable, Method } from "./utils/common-types.ts";
+import type { Context } from "./index.ts";
 
 export interface BasicsContext { 
   request: Request,
@@ -10,8 +10,8 @@ export interface BasicsContext {
   pathname: string, 
   searchParams: URLSearchParams,
   userAgent: string,
-  params: { [key: string]: string }
-  query: { [key: string]: string }
+  params: { [key: string]: string | undefined }
+  query: { [key: string]: string | undefined }
   ip?: string
 }
 

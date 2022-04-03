@@ -1,7 +1,7 @@
-import type { Awaitable } from "./utils/common-types";
-import { combine, Context } from "./index";
-import { ContentNegotiationResults, withContentNegotiation } from './content-negotiation'
-import { withAccepts, AcceptedType } from './content-negotiation-2'
+import type { Awaitable } from "./utils/common-types.ts";
+import { combine, Context } from "./index.ts";
+import { ContentNegotiationResults, withContentNegotiation } from './content-negotiation.ts'
+import { withAccepts, AcceptedType } from './content-negotiation-2.ts'
 
 interface BodyParserOptions<T = any> {
   defaultJSON?: T

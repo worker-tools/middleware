@@ -1,17 +1,19 @@
-import type { Temporal } from '@js-temporal/polyfill'
-import type { Awaitable } from "./utils/common-types";
-import type { Context } from "./index";
+//xxxx/ <reference path="./typings/Temporal.d.ts" />
+
+import type { Awaitable } from "./utils/common-types.ts";
+import type { Context } from "./index.ts";
+
 
 export type CacheControl = 'no-cache' | 'no-store' | 'public' | 'private' | string;
 
 export interface CacheOptions {
   cacheControl?: CacheControl,
-  maxAge?: number | Temporal.Duration,
+  maxAge?: number,
   mustRevalidate?: boolean,
   immutable?: boolean,
 }
 
-const SECONDS = { unit: 'second', relativeTo: '1970-01-01' } as Temporal.DurationTotalOf;
+// const SECONDS = { unit: 'second', relativeTo: '1970-01-01' } as Temporal.DurationTotalOf;
 
 /**
  * TODO: Implement request-response
@@ -20,22 +22,22 @@ export const withCaching = (opt: CacheOptions = {}) => async <X extends Context>
   const x = await ax;
   const req = x.request;
   
-  x.effects!.push(res => {
+  x.effects.push(res => {
     res.headers.set('cache-control', opt.cacheControl ?? '')
 
     if (typeof opt.maxAge === 'number') {
       // FIXME: check for global DEBUG var? Check process.env ??
       if (opt.maxAge > 31536000) console.warn(`Provided maxAge appears to be too large. Perhaps you meant ${opt.maxAge / 1000}? maxAge is defined in seconds!`)
       res.headers.append('cache-control', `max-age=${opt.maxAge}`)
-    } else if (opt.maxAge) {
-      res.headers.append('cache-control', `max-age=${opt.maxAge.total(SECONDS)}`)
+    // } else if (opt.maxAge) {
+    //   res.headers.append('cache-control', `max-age=${opt.maxAge.total(SECONDS)}`)
     }
 
-    if (typeof opt.mustRevalidate) {
+    if (opt.mustRevalidate) {
       res.headers.append('cache-control', 'must-revalidate')
     }
 
-    if (typeof opt.immutable) {
+    if (opt.immutable) {
       res.headers.append('cache-control', 'immutable')
     }
 
