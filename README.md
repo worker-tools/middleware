@@ -23,7 +23,7 @@ Modifying cookies is done via the cookie store. While the cookie store API is as
 There are two session middlewares. The cookie session encodes the entire session object into a cookie and is meant for prototyping and small use cases. 
 The storage session uses a KV Storage API-compatible storage object to persist the session object between requests. Worker Tools provides storage adapters for Cloudflare's KV storage and SQLite/Postgres for Deno.
 
-The session is a plain JavaScript object that is serialized/deserialzed via the Structured Clone Algorithm, i.e. it behaves largely the same as storing an object in IndexedDB. In other words, you can add Maps, Sets, and ArrayBuffers to it. 
+The session is a plain JavaScript object that is serialized/deserialized via the Structured Clone Algorithm, i.e. it behaves largely the same as storing an object in IndexedDB. In other words, you can add Maps, Sets, and ArrayBuffers to it. 
 
 ```js
 router.get('/', combine(

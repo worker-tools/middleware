@@ -109,7 +109,7 @@ test('setting multiple cookies', async () => {
   cookieStore.set('one', '1')
   cookieStore.set('two', '2')
   const response = await executeEffects(effects, ok())
-  assertEquals([...iterHeadersSetCookieFix(response.headers)].length, 2)
+  assertEquals([...iterHeadersSetCookieFix(response.headers)].filter(([k]) => k === 'set-cookie').length, 2)
 })
 
 const secret = 'password123'

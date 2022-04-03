@@ -48,5 +48,44 @@ export interface Context {
  * @returns 
  */
 export function executeEffects(effects: EffectsList, response: Awaitable<Response>) {
-  return effects?.reduceRight(async (response, effect) => effect(await response), response) ?? response
+  return [...effects].reduceRight(async (response, effect) => effect(await response), response) ?? response
+}
+
+declare interface URLPatternInit {
+  protocol?: string;
+  username?: string;
+  password?: string;
+  hostname?: string;
+  port?: string;
+  pathname?: string;
+  search?: string;
+  hash?: string;
+  baseURL?: string;
+}
+
+declare interface URLPatternComponentResult {
+  input: string;
+  groups: Record<string, string>;
+}
+
+interface URLPatternResult {
+  /** The inputs provided when matching. */
+  inputs: [URLPatternInit] | [URLPatternInit, string];
+
+  /** The matched result for the `protocol` matcher. */
+  protocol: URLPatternComponentResult;
+  /** The matched result for the `username` matcher. */
+  username: URLPatternComponentResult;
+  /** The matched result for the `password` matcher. */
+  password: URLPatternComponentResult;
+  /** The matched result for the `hostname` matcher. */
+  hostname: URLPatternComponentResult;
+  /** The matched result for the `port` matcher. */
+  port: URLPatternComponentResult;
+  /** The matched result for the `pathname` matcher. */
+  pathname: URLPatternComponentResult;
+  /** The matched result for the `search` matcher. */
+  search: URLPatternComponentResult;
+  /** The matched result for the `hash` matcher. */
+  hash: URLPatternComponentResult;
 }

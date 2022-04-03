@@ -136,23 +136,23 @@ export const withBodyParser = <J = any>(
 
 export const withAnyBody = <J>(opts: BodyParserOptions<J>) => combine(withAccepts({ accepts }), withBodyParser(opts));
 
-(async () => {
-  const ctx = { request: new Request('/'), waitUntil: () => { }, effects: [] as any } as Context
+// (async () => {
+//   const ctx = { request: new Request('/'), waitUntil: () => { }, effects: [] as any } as Context
 
-  const x = await withBodyParser({})(withAccepts({ accepts: [...accepts, 'text/foo'] })(ctx))
-  if (x.accepted === 'application/x-www-form-urlencoded') {
-    x.bodyParams
-    x.form
-  }
-  else if (x.accepted === 'multipart/form-data') {
-    x.formData
-    x.bodyParams
-    x.files
-  } else if (x.accepted === 'application/octet-stream' || x.accepted === 'application/binary') {
-    x.buffer
-    x.blob
-  } else if (x.accepted === 'text/foobar') {
-    x.text
-  }
-})
+//   const x = await withBodyParser({})(withAccepts({ accepts: [...accepts, 'text/foo'] })(ctx))
+//   if (x.accepted === 'application/x-www-form-urlencoded') {
+//     x.bodyParams
+//     x.form
+//   }
+//   else if (x.accepted === 'multipart/form-data') {
+//     x.formData
+//     x.bodyParams
+//     x.files
+//   } else if (x.accepted === 'application/octet-stream' || x.accepted === 'application/binary') {
+//     x.buffer
+//     x.blob
+//   } else if (x.accepted === 'text/foobar') {
+//     x.text
+//   }
+// })
 

@@ -30,39 +30,39 @@ const request = new Request('/item/detail?id=3', {
   },
 })
 
-const mkContext = (request: Request) => ({ request, effects: new EffectsList() })
+const mkCtx = (request: Request) => ({ request, effects: new EffectsList() })
 
 const basics = withBasics()
 
 test('basics/method', async () => {
-  const { method } = await basics(mkContext(request))
+  const { method } = await basics(mkCtx(request))
   assertEquals(method, 'POST')
 })
 
 test('basics/url', async () => {
-  const { url } = await basics(mkContext(request))
+  const { url } = await basics(mkCtx(request))
   assert(url instanceof URL);
 })
 
 test('basics/headers', async () => {
-  const { headers } = await basics(mkContext(request))
+  const { headers } = await basics(mkCtx(request))
   assert(headers instanceof Headers)
   assertEquals(headers.get('user-agent'), 'Mozilla/5.0 (Windows; U; MSIE 9.0; Windows NT 9.0; en-US);')
 })
 
 test('basics/pathname', async () => {
-  const { pathname } = await basics(mkContext(request))
+  const { pathname } = await basics(mkCtx(request))
   assertEquals(pathname, '/item/detail')
 })
 
 test('basics/search', async () => {
-  const { searchParams, query } = await basics(mkContext(request))
+  const { searchParams, query } = await basics(mkCtx(request))
   assert(searchParams instanceof URLSearchParams)
   assertEquals(searchParams.get('id'), '3')
   assertEquals(query.id, '3')
 })
 
 test('basics/userAgent', async () => {
-  const { userAgent } = await basics(mkContext(request))
+  const { userAgent } = await basics(mkCtx(request))
   assertEquals(userAgent, 'Mozilla/5.0 (Windows; U; MSIE 9.0; Windows NT 9.0; en-US);')
 })
