@@ -49,10 +49,6 @@ await build({
       name: "urlpattern-polyfill",
       version: "^3.0.0",
     },
-    "https://esm.sh/cookie-store-interface@0.1.1/index.js": {
-      name: "cookie-store-interface",
-      version: "^0.1.1",
-    },
     'https://esm.sh/kv-storage-interface@0.2.0/kv-storage-interface.js': {
       name: "kv-storage-interface",
       version: "^0.2.0",
@@ -60,10 +56,6 @@ await build({
     "https://esm.sh/uuid-class@0.12.3/index.js?module": {
       name: "uuid-class",
       version: "^0.12.3",
-    },
-    "https://esm.sh/typed-array-utils@0.2.2/index.js?module": {
-      name: "typed-array-utils",
-      version: "^0.2.2",
     },
     "https://esm.sh/base64-encoding@0.14.3/index.js?module": {
       name: "base64-encoding",
@@ -81,6 +73,30 @@ await build({
       name: "msgpackr",
       version: "^1.5.5",
     },
+    "https://raw.githubusercontent.com/worker-tools/request-cookie-store/master/index.ts": {
+      name: "@worker-tools/request-cookie-store",
+      version: "latest"
+    },
+    "https://raw.githubusercontent.com/worker-tools/signed-cookie-store/master/index.ts": {
+      name: "@worker-tools/signed-cookie-store",
+      version: "latest"
+    },
+    "https://raw.githubusercontent.com/worker-tools/encrypted-cookie-store/master/index.ts": {
+      name: "@worker-tools/encrypted-cookie-store",
+      version: "latest"
+    },
+    'https://raw.githubusercontent.com/worker-tools/resolvable-promise/master/index.ts': {
+      name: "@worker-tools/resolvable-promise",
+      version: "latest"
+    },
+    'https://raw.githubusercontent.com/worker-tools/extendable-promise/master/index.ts': {
+      name: "@worker-tools/resolvable-promise",
+      version: "latest"
+    },
+    "https://raw.githubusercontent.com/worker-tools/response-creators/master/index.ts": {
+      name: "@worker-tools/response-creators",
+      version: "latest"
+    }
   },
   typeCheck: false,
   package: {

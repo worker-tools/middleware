@@ -1,4 +1,3 @@
-import { URLPatternComponentResult, URLPatternResult } from "https://esm.sh/urlpattern-polyfill@3.0.0/dist/index.js?module";
 export { pipe as combine } from 'https://esm.sh/ts-functional-pipe@3.1.2/ts-functional-pipe.js?module';
 
 export * from './context.ts'

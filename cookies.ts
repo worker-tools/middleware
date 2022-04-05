@@ -1,8 +1,8 @@
-import { CookieStore, RequestCookieStore } from "../request-cookie-store/index.ts";
-import { SignedCookieStore, DeriveOptions } from "../signed-cookie-store/index.ts";
-import { EncryptedCookieStore } from "../encrypted-cookie-store/index.ts";
-import { ResolvablePromise } from '../resolvable-promise/index.ts';
-import { forbidden } from "../response-creators/index.ts";
+import { CookieStore, RequestCookieStore } from "https://raw.githubusercontent.com/worker-tools/request-cookie-store/master/index.ts";
+import { SignedCookieStore, DeriveOptions } from "https://raw.githubusercontent.com/worker-tools/signed-cookie-store/master/index.ts";
+import { EncryptedCookieStore } from "https://raw.githubusercontent.com/worker-tools/encrypted-cookie-store/master/index.ts";
+import { ResolvablePromise } from 'https://raw.githubusercontent.com/worker-tools/resolvable-promise/master/index.ts';
+import { forbidden } from "https://raw.githubusercontent.com/worker-tools/response-creators/master/index.ts";
 
 import { Awaitable } from "./utils/common-types.ts";
 import { MiddlewareCookieStore } from "./utils/middleware-cookie-store.ts";

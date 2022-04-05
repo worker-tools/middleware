@@ -54,3 +54,40 @@ export interface Context {
 export function executeEffects(effects: EffectsList, response: Awaitable<Response>) {
   return [...effects].reduceRight(async (response, effect) => effect(await response), response) ?? response
 }
+
+/**
+ * Extends the lifetime of the install and activate events dispatched on the global scope as part of the
+ * service worker lifecycle. This ensures that any functional events (like FetchEvent) are not dispatched until it
+ * upgrades database schemas and deletes the outdated cache entries. 
+ */
+export interface ExtendableEvent extends Event {
+    waitUntil(f: any): void;
+}
+
+export interface ExtendableEventInit extends EventInit {
+    new(type: string, eventInitDict?: ExtendableEventInit): ExtendableEvent;
+}
+
+export interface FetchEventInit extends ExtendableEventInit {
+    new(type: string, eventInitDict: FetchEventInit): FetchEvent;
+    clientId?: string;
+    preloadResponse?: Promise<any>;
+    replacesClientId?: string;
+    request: Request;
+    resultingClientId?: string;
+}
+
+/**
+ * This is the event type for fetch events dispatched on the service worker global scope. 
+ * It contains information about the fetch, including the request and how the receiver will treat the response. 
+ * It provides the event.respondWith() method, which allows us to provide a response to this fetch. 
+ */
+export interface FetchEvent extends ExtendableEvent {
+    readonly clientId: string;
+    readonly preloadResponse: Promise<any>;
+    readonly replacesClientId: string;
+    readonly request: Request;
+    readonly resultingClientId: string;
+    respondWith(r: Response | Promise<Response>): void;
+}
+
