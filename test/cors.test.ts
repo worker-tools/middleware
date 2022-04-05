@@ -12,7 +12,8 @@ const { test } = Deno;
 
 import { EffectsList, executeEffects } from '../context.ts'
 import { anyCORS, strictCORS, REQUEST_METHOD, REQUEST_HEADERS, ALLOW_ORIGIN, ALLOW_METHODS, ALLOW_HEADERS, ALLOW_CREDENTIALS, ORIGIN, VARY } from '../cors.ts';
-import { ok, noContent } from '../../response-creators/index.ts'
+
+import { ok, noContent } from 'https://raw.githubusercontent.com/worker-tools/response-creators/master/index.ts'
 
 test('environment', () => {
   assertExists(Request);
