@@ -16,8 +16,8 @@ import { withUnsignedCookies, withSignedCookies } from '../cookies.ts';
 import { iterHeadersSetCookieFix } from '../utils/headers-set-cookie-fix.ts';
 import { MiddlewareCookieStore } from '../utils/middleware-cookie-store.ts';
 
-import { SignedCookieStore } from 'https://raw.githubusercontent.com/worker-tools/signed-cookie-store/master/index.ts';
-import { ok } from 'https://raw.githubusercontent.com/worker-tools/response-creators/master/index.ts'
+import { SignedCookieStore } from 'https://ghuc.cc/worker-tools/signed-cookie-store/index.ts';
+import { ok } from 'https://ghuc.cc/worker-tools/response-creators/index.ts'
 
 const mkCtx = (request: Request) => ({ request, effects: new EffectsList() })
 

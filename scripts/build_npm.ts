@@ -40,28 +40,23 @@ await build({
   shims: {},
   test: false,
   mappings: {
-    // "https://esm.sh/(@?[^@]+)@([^/]+)/(.*).js": {
-    //   name: "$1",
-    //   version: "^$2",
-    //   subPath: "$3.js",
-    // },
     "https://esm.sh/urlpattern-polyfill@3.0.0/dist/index.js": {
       name: "urlpattern-polyfill",
       version: "^3.0.0",
     },
-    'https://esm.sh/kv-storage-interface@0.2.0/kv-storage-interface.js': {
+    'https://ghuc.cc/qwtel/kv-storage-interface/index.d.ts': {
       name: "kv-storage-interface",
       version: "^0.2.0",
     },
-    "https://esm.sh/uuid-class@0.12.3/index.js?module": {
+    "https://ghuc.cc/qwtel/uuid-class/index.ts": {
       name: "uuid-class",
       version: "^0.12.3",
     },
-    "https://esm.sh/base64-encoding@0.14.3/index.js?module": {
+    "https://ghuc.cc/qwtel/base64-encoding/index.js": {
       name: "base64-encoding",
-      version: "^0.14.3",
+      version: "^0.15.0-alpha.0",
     },
-    'https://esm.sh/ts-functional-pipe@3.1.2/ts-functional-pipe.js?module': {
+    'https://esm.sh/ts-functional-pipe@3.1.2/ts-functional-pipe.js': {
       name: "ts-functional-pipe",
       version: "^3.1.2",
     },
@@ -73,27 +68,27 @@ await build({
       name: "msgpackr",
       version: "^1.5.5",
     },
-    "https://raw.githubusercontent.com/worker-tools/request-cookie-store/master/index.ts": {
+    "https://ghuc.cc/worker-tools/request-cookie-store/index.ts": {
       name: "@worker-tools/request-cookie-store",
       version: "latest"
     },
-    "https://raw.githubusercontent.com/worker-tools/signed-cookie-store/master/index.ts": {
+    "https://ghuc.cc/worker-tools/signed-cookie-store/index.ts": {
       name: "@worker-tools/signed-cookie-store",
       version: "latest"
     },
-    "https://raw.githubusercontent.com/worker-tools/encrypted-cookie-store/master/index.ts": {
+    "https://ghuc.cc/worker-tools/encrypted-cookie-store/index.ts": {
       name: "@worker-tools/encrypted-cookie-store",
       version: "latest"
     },
-    'https://raw.githubusercontent.com/worker-tools/resolvable-promise/master/index.ts': {
+    'https://ghuc.cc/worker-tools/resolvable-promise/index.ts': {
       name: "@worker-tools/resolvable-promise",
       version: "latest"
     },
-    'https://raw.githubusercontent.com/worker-tools/extendable-promise/master/index.ts': {
+    'https://ghuc.cc/worker-tools/extendable-promise/index.ts': {
       name: "@worker-tools/resolvable-promise",
       version: "latest"
     },
-    "https://raw.githubusercontent.com/worker-tools/response-creators/master/index.ts": {
+    "https://ghuc.cc/worker-tools/response-creators/index.ts": {
       name: "@worker-tools/response-creators",
       version: "latest"
     }

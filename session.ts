@@ -1,6 +1,6 @@
-import type { StorageArea } from 'https://esm.sh/kv-storage-interface@0.2.0/kv-storage-interface.js';
-import { UUID } from 'https://esm.sh/uuid-class@0.12.3/index.js?module';
-import { Base64Decoder, Base64Encoder } from 'https://esm.sh/base64-encoding@0.14.3/index.js?module';
+import type { StorageArea } from 'https://ghuc.cc/qwtel/kv-storage-interface/index.d.ts';
+import { UUID } from 'https://ghuc.cc/qwtel/uuid-class/index.ts';
+import { Base64Decoder, Base64Encoder } from 'https://ghuc.cc/qwtel/base64-encoding/index.ts';
 import { Encoder as BinaryEncoder, Decoder as BinaryDecoder } from 'https://esm.sh/msgpackr@1.5.5/msgpackr.js';
 // import { Encoder as BinaryEncoder, Decoder as BinaryDecoder } from 'cbor-x';
 

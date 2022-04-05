@@ -1,4 +1,4 @@
-export { pipe as combine } from 'https://esm.sh/ts-functional-pipe@3.1.2/ts-functional-pipe.js?module';
+export { pipe as combine } from 'https://esm.sh/ts-functional-pipe@3.1.2/ts-functional-pipe.js';
 
 export * from './context.ts'
 

@@ -1,4 +1,4 @@
-import { notAcceptable, unsupportedMediaType } from "https://raw.githubusercontent.com/worker-tools/response-creators/master/index.ts";
+import { notAcceptable, unsupportedMediaType } from "https://ghuc.cc/worker-tools/response-creators/index.ts";
 import negotiated from 'https://esm.sh/negotiated@1.0.2/negotiated.js';
 
 import { Awaitable } from './utils/common-types.ts';

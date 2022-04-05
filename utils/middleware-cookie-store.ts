@@ -1,7 +1,7 @@
 import { 
   CookieStore, CookieListItem, CookieInit, CookieList, CookieStoreDeleteOptions, CookieStoreGetOptions
-} from "https://raw.githubusercontent.com/worker-tools/request-cookie-store/master/index.ts";
-import { ExtendablePromise } from "https://raw.githubusercontent.com/worker-tools/extendable-promise/master/index.ts";
+} from "https://ghuc.cc/worker-tools/request-cookie-store/index.ts";
+import { ExtendablePromise } from "https://ghuc.cc/worker-tools/extendable-promise/index.ts";
 import { Cookies, cookiesFrom } from "../cookies.ts";
 
 function decodeCookieValue(item: CookieListItem): CookieListItem;
