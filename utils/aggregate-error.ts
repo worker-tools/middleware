@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 class AggregateErrorPolyfill extends Error {
   errors: readonly any[];
 	constructor(errors: Iterable<any>, message = '') {
