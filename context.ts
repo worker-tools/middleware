@@ -1,8 +1,7 @@
 import { AppendOnlyList } from "./utils/append-only-list.ts";
 import { Awaitable } from "./utils/common-types.ts";
-import type { 
-  URLPatternInit, URLPatternComponentResult, URLPatternInput, URLPatternResult 
-} from 'https://esm.sh/urlpattern-polyfill@3.0.0/dist/index.js';
+
+import type { URLPatternInit, URLPatternComponentResult, URLPatternInput, URLPatternResult } from 'https://ghuc.cc/kenchris/urlpattern-polyfill@a076337/src/index.d.ts';
 export type { URLPatternInit, URLPatternComponentResult, URLPatternInput, URLPatternResult }
 
 export type ResponseEffect = (r: Response) => Awaitable<Response>
