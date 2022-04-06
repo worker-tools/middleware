@@ -79,11 +79,11 @@ await build({
     },
     "https://ghuc.cc/qwtel/uuid-class/index.ts": {
       name: "uuid-class",
-      version: "^0.13.0-alpha.0",
+      version: "latest",
     },
     "https://ghuc.cc/qwtel/base64-encoding/index.ts": {
       name: "base64-encoding",
-      version: "^0.15.0-alpha.0",
+      version: "latest",
     },
     'https://esm.sh/ts-functional-pipe@3.1.2/ts-functional-pipe.js': {
       name: "ts-functional-pipe",
