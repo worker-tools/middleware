@@ -114,7 +114,7 @@ await build({
       version: "latest"
     },
     'https://ghuc.cc/worker-tools/extendable-promise/index.ts': {
-      name: "@worker-tools/resolvable-promise",
+      name: "@worker-tools/extendable-promise",
       version: "latest"
     },
     "https://ghuc.cc/worker-tools/response-creators/index.ts": {
