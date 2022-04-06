@@ -71,7 +71,7 @@ await build({
     "https://ghuc.cc/kenchris/urlpattern-polyfill@a076337/src/index.d.ts": {
       name: "urlpattern-polyfill",
       version: "^4.0.1",
-      subPath: '/dist/index.d.ts'
+      subPath: 'dist/index.d.ts'
     },
     'https://ghuc.cc/qwtel/kv-storage-interface/index.d.ts': {
       name: "kv-storage-interface",
