@@ -10,9 +10,9 @@ import {
 } from 'https://deno.land/std@0.133.0/testing/asserts.ts'
 const { test } = Deno;
 
-import { EffectsList, executeEffects } from '../context.ts'
 import { anyCORS, strictCORS, REQUEST_METHOD, REQUEST_HEADERS, ALLOW_ORIGIN, ALLOW_METHODS, ALLOW_HEADERS, ALLOW_CREDENTIALS, ORIGIN, VARY } from '../cors.ts';
 
+import { executeEffects } from '../context.ts'
 import { ok, noContent } from 'https://ghuc.cc/worker-tools/response-creators/index.ts'
 
 test('environment', () => {
@@ -26,8 +26,6 @@ test('anyCORS', () => {
   assertExists(anyCORS())
 })
 
-const mkCtx = (request: Request) => ({ request, effects: new EffectsList() })
-
 const withAnyCors = anyCORS()
 
 const withStrictCors = strictCORS({
@@ -38,14 +36,14 @@ const withStrictCors = strictCORS({
 })
 
 test('any method', async () => {
-  const { effects } = await withAnyCors(mkCtx(new Request('/', { method: 'OPTIONS', headers: { [REQUEST_METHOD]: 'POST' } })))
+  const { effects } = await withAnyCors({ request: new Request('/', { method: 'OPTIONS', headers: { [REQUEST_METHOD]: 'POST' } }), effects: [] })
   const { headers } = await executeEffects(effects, noContent())
   assertStringIncludes(headers.get(ALLOW_METHODS)!, 'POST')
   assertStringIncludes(headers.get(VARY)!, REQUEST_METHOD)
 })
 
 test('any headers', async () => {
-  const { effects } = await withAnyCors(mkCtx(new Request('/', { method: 'OPTIONS', headers: { [REQUEST_HEADERS]: 'X-PINGOTHER, Content-Type' } })))
+  const { effects } = await withAnyCors({ request: new Request('/', { method: 'OPTIONS', headers: { [REQUEST_HEADERS]: 'X-PINGOTHER, Content-Type' } }), effects: [] })
   const { headers } = await executeEffects(effects, noContent())
   assertStringIncludes(headers.get(ALLOW_HEADERS)!, 'X-PINGOTHER')
   assertStringIncludes(headers.get(ALLOW_HEADERS)!, 'Content-Type')
@@ -53,18 +51,18 @@ test('any headers', async () => {
 })
 
 test('any origin', async () => {
-  let { effects } = await withAnyCors(mkCtx(new Request('/', { method: 'OPTIONS', headers: { [ORIGIN]: 'foo.example.com' } })))
+  let { effects } = await withAnyCors({ request: new Request('/', { method: 'OPTIONS', headers: { [ORIGIN]: 'foo.example.com' } }), effects: [] })
   let { headers } = await executeEffects(effects, noContent())
   assertStringIncludes(headers.get(ALLOW_ORIGIN)!, 'foo.example.com');
 
-  ({ effects } = await withAnyCors(mkCtx(new Request('/', { method: 'OPTIONS', headers: { [ORIGIN]: 'bar.example.com' } }))));
+  ({ effects } = await withAnyCors({ request: new Request('/', { method: 'OPTIONS', headers: { [ORIGIN]: 'bar.example.com' } }), effects: [] }));
   ({ headers } = await executeEffects(effects, noContent()));
   assertStringIncludes(headers.get(ALLOW_ORIGIN)!, 'bar.example.com');
   assertStringIncludes(headers.get(VARY)!, ORIGIN)
 })
 
 test('strict cors 1', async () => {
-  const { effects } = await withStrictCors(mkCtx(new Request('/', { method: 'OPTIONS', headers: { [ORIGIN]: 'foo.example.com' } })))
+  const { effects } = await withStrictCors({ request: new Request('/', { method: 'OPTIONS', headers: { [ORIGIN]: 'foo.example.com' } }), effects: [] })
   const { headers } = await executeEffects(effects, noContent())
   assertEquals(headers.get(ALLOW_ORIGIN), 'localhost:12334')
 })

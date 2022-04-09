@@ -1,14 +1,20 @@
+// deno-lint-ignore-file no-explicit-any
+export { pipe as combine } from 'https://esm.sh/ts-functional-pipe@3.1.2/ts-functional-pipe.js';
+
 import { AppendOnlyList } from "./utils/append-only-list.ts";
-import { Awaitable } from "./utils/common-types.ts";
+import { Awaitable, Callable } from "./utils/common-types.ts";
 
 import type { URLPatternInit, URLPatternComponentResult, URLPatternInput, URLPatternResult } from 'https://ghuc.cc/kenchris/urlpattern-polyfill@a076337/src/index.d.ts';
 export type { URLPatternInit, URLPatternComponentResult, URLPatternInput, URLPatternResult }
 
-export type ResponseEffect = (r: Response) => Awaitable<Response>
+export type ResponseEffect = (r: Response) => void | Awaitable<Response>
 
 export class EffectsList extends AppendOnlyList<ResponseEffect> {}
 
 export interface Context { 
+  /**
+   * The original request for use in middleware. Also accessible via first argument to user handler.
+   */
   request: Request, 
 
   /** 
@@ -51,8 +57,57 @@ export interface Context {
  * @returns 
  */
 export function executeEffects(effects: EffectsList, response: Awaitable<Response>) {
-  return [...effects].reduceRight(async (response, effect) => effect(await response), response) ?? response
+  // TODO: to reduce or reduceRight, that is the question...
+  // reduceRight matches the behavior of my initial, non-compose friendly middleware model 
+  // which was just increasingly deep levels of wrapped function calls.
+  // In that model, the effects (post-processes) of the last applied middleware were executed first.
+  // Regular reduce matches the order in which middlewares are applied, 
+  // which probably is close what users expect to happen, anyway...
+  return [...effects].reduceRight(async (response, effect) => effect(await response) ?? response, response) ?? response
 }
+
+/** Any record of unknown values */
+export type AnyRecord = Record<PropertyKey, unknown>
+
+/**
+ * A helper function to create user-defined middleware. 
+ * 
+ * Its main purpose is to allow developers to create correctly typed middleware without dealing with generics.
+ * This is achieved via the `_defaultExt` parameter, which is used to infer the types of the *extension* added to the *context*.
+ * As the `_` prefix implies, it is not actually used.
+ * The purpose of the default extension object is solely to tell the type checker which additional keys to expect on the context object after this middleware is applied.
+ * The job of adding (default) values to the context belongs to the middleware function. 
+ * 
+ * Here are some example usages. All are valid in JavaScript and TypeScript:
+ * 
+ * ```ts
+ * const fn = createMiddleware({}, _ => _)
+ * const gn = createMiddleware({}, async ax => ({ ...await ax }))
+ * const hn = createMiddleware({ foo: '' }, async ax => ({ ...await ax, foo: 'star' }))
+ * const jn = createMiddleware({ bar: '' }, async ax => { 
+ *   const x = await ax;
+ *   x.effects.push(resp => {
+ *     resp.headers.set('x-middleware', 'jn')
+ *   })
+ *   return { ...x, bar: 'star' }
+ * })
+ * const myMW = combine(fn, hn, jn, gn) 
+ * //=> Context & { foo: string } & { bar: string }
+ * ```
+ * 
+ * @param _defaultExt The default extension to the current context. Can also be a function that returns the extension object, which is never called (to avoid unnecessary memory allocation).
+ * @param middlewareFn A middleware functions: Adds the keys listed in `defaultExt` to the context
+ * @returns The provided `middlewareFn` with type annotations inferred based on `defaultExt`
+ * @deprecated This feature is unstable. Might remove or rename later.
+ */
+export function createMiddleware<Etx extends AnyRecord>(_defaultExt: Callable<Etx>, middlewareFn: <Ctx extends Context>(ax: Awaitable<Ctx>) => Awaitable<Ctx & Etx>) {
+  return middlewareFn;
+}
+
+// createMiddleware(() => ({ foo: ''}), async ax => ({ ...ax, foo: 'bar' }))
+// const fn = createMiddleware(() => ({ foo: ''}), async ax => ({ ...await ax, foo: 'bar' }))
+// const bn = createMiddleware(() => ({ bar: ''}), async ax => ({ ...await ax, bar: 'bar' }))
+// const zn = createMiddleware(() => ({ baz: ''}), async ax => ({ ...await ax, baz: 'bar' }))
 
 /**
  * Extends the lifetime of the install and activate events dispatched on the global scope as part of the
@@ -60,20 +115,20 @@ export function executeEffects(effects: EffectsList, response: Awaitable<Respons
  * upgrades database schemas and deletes the outdated cache entries. 
  */
 export interface ExtendableEvent extends Event {
-    waitUntil(f: any): void;
+  waitUntil(f: any): void;
 }
 
 export interface ExtendableEventInit extends EventInit {
-    new(type: string, eventInitDict?: ExtendableEventInit): ExtendableEvent;
+  new(type: string, eventInitDict?: ExtendableEventInit): ExtendableEvent;
 }
 
 export interface FetchEventInit extends ExtendableEventInit {
-    new(type: string, eventInitDict: FetchEventInit): FetchEvent;
-    clientId?: string;
-    preloadResponse?: Promise<any>;
-    replacesClientId?: string;
-    request: Request;
-    resultingClientId?: string;
+  new(type: string, eventInitDict: FetchEventInit): FetchEvent;
+  clientId?: string;
+  preloadResponse?: Promise<any>;
+  replacesClientId?: string;
+  request: Request;
+  resultingClientId?: string;
 }
 
 /**
@@ -82,11 +137,11 @@ export interface FetchEventInit extends ExtendableEventInit {
  * It provides the event.respondWith() method, which allows us to provide a response to this fetch. 
  */
 export interface FetchEvent extends ExtendableEvent {
-    readonly clientId: string;
-    readonly preloadResponse: Promise<any>;
-    readonly replacesClientId: string;
-    readonly request: Request;
-    readonly resultingClientId: string;
-    respondWith(r: Response | Promise<Response>): void;
+  readonly clientId: string;
+  readonly preloadResponse: Promise<any>;
+  readonly replacesClientId: string;
+  readonly request: Request;
+  readonly resultingClientId: string;
+  respondWith(r: Response | Promise<Response>): void;
 }
 

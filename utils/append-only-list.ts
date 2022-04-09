@@ -1,31 +1,32 @@
+const _arr = new WeakMap<AppendOnlyList<unknown>, unknown>();
+
 export class AppendOnlyList<T> {
-  #arr: T[];
   constructor() {
-    this.#arr = [];
+    _arr.set(this, []);
   }
-  get length() {
-    return this.#arr.length;
+  get length(): number {
+    return (<T[]>_arr.get(this)!).length;
   }
   toString(): string {
-    return this.#arr.toString();
+    return (<T[]>_arr.get(this)!).toString();
   }
   toLocaleString(): string {
-    return this.#arr.toLocaleString();
+    return (<T[]>_arr.get(this)!).toLocaleString();
   }
   push(...items: T[]): number {
-    return this.#arr.push(...items);
+    return (<T[]>_arr.get(this)!).push(...items);
   }
   entries(): IterableIterator<[number, T]> {
-    return this.#arr.entries()
+    return (<T[]>_arr.get(this)!).entries()
   }
   keys(): IterableIterator<number> {
-    return this.#arr.keys()
+    return (<T[]>_arr.get(this)!).keys()
   }
   values(): IterableIterator<T> {
-    return this.#arr.values()
+    return (<T[]>_arr.get(this)!).values()
   }
   [Symbol.iterator](): IterableIterator<T> {
-    return this.#arr[Symbol.iterator]();
+    return (<T[]>_arr.get(this)!)[Symbol.iterator]();
   }
   [Symbol.unscopables](): { copyWithin: boolean; entries: boolean; fill: boolean; find: boolean; findIndex: boolean; keys: boolean; values: boolean; } {
     throw new Error('Method not implemented.');

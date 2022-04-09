@@ -1,3 +1,4 @@
+// deno-lint-ignore-file
 import { notAcceptable, unsupportedMediaType } from "https://ghuc.cc/worker-tools/response-creators/index.ts";
 import negotiated from 'https://esm.sh/negotiated@1.0.2/negotiated.js';
 
@@ -6,42 +7,36 @@ import { Context } from './index.ts'
 
 const weightSortFn = <X extends { weight: number }>(a: X, b: X) => a.weight >= b.weight ? a : b;
 
-const ACCEPT = 'Accept';
+const ACCEPT          = 'Accept';
 const ACCEPT_ENCODING = 'Accept-Encoding';
 const ACCEPT_LANGUAGE = 'Accept-Language';
 // const ACCEPT_CHARSET = 'Accept-Charset';
 
-const CONTENT_TYPE = 'Content-Type';
+const CONTENT_TYPE     = 'Content-Type';
 const CONTENT_LANGUAGE = 'Content-Language';
 const CONTENT_ENCODING = 'Content-Encoding';
 // const CHARSET = 'charset';
 
 const VARY = 'Vary';
 
-// TODO: figure out how to deal with thrown responses for all middleware
-interface Options {
-  /** Indicate if unacceptable content should throw a response */
-  throws?: boolean,
-}
+// export interface TypesOptions<T extends string, TS extends readonly T[]> extends Options {
+//   /** The content types _provided_ by this endpoint. Not to be confused with `accepts`. */
+//   types?: TS,
+// }
 
-export interface TypesOptions<T extends string, TS extends readonly T[]> extends Options {
-  /** The content types _provided_ by this endpoint. Not to be confused with `accepts`. */
-  types?: TS,
-}
-
-export interface AcceptsOptions<T extends string, TS extends readonly T[]> extends Options {
-  /** The body content types _acceptable_ to this endpoint. Not to be confused with `types`. */
-  accepts?: TS,
-}
+// export interface AcceptsOptions<T extends string, TS extends readonly T[]> extends Options {
+//   /** The body content types _acceptable_ to this endpoint. Not to be confused with `types`. */
+//   accepts?: TS,
+// }
 
 export interface ContentType<T> {
   /** The best content type _acceptable to the client_. */
   type: T,
 }
 
-export interface AcceptedType<A> {
+export interface Accepted<T> {
   /** The request's `Content-Type` header iff acceptable to this endpoint */
-  accepted: A,
+  accepted: T,
 }
 
 // export interface LanguageNegotiationOptions<
@@ -81,13 +76,12 @@ export interface AcceptedType<A> {
 //   acceptedEncoding: AE,
 // }
 
-export function withContentTypes<T extends string, TS extends readonly T[]>(
-  opts: TypesOptions<T, TS> = {}
+export function provides<T extends string, TS extends readonly T[]>(
+  types: TS
 ): <X extends Context>(ax: Awaitable<X>) => Promise<X & ContentType<TS[number]>> {
   return async ax => {
     const ctx = await ax;
-    const headers = ctx.request.headers;
-    const { types, throws } = opts;
+    const { headers } = ctx.request;
 
     const resultT = [...negotiated.mediaTypes(headers.get(ACCEPT))]
       .filter(t => !types || types.includes(t.type as TS[number]))
@@ -95,7 +89,7 @@ export function withContentTypes<T extends string, TS extends readonly T[]>(
 
     const type = resultT.type as TS[number]
 
-    if (throws && headers.has(ACCEPT) && types && !type) throw notAcceptable();
+    if (headers.has(ACCEPT) && types && !type) throw notAcceptable();
 
     ctx.effects.push(response => {
       // If the server accepts more than 1 option, we set the vary header for correct caching
@@ -107,24 +101,29 @@ export function withContentTypes<T extends string, TS extends readonly T[]>(
   }
 }
 
-export function withAccepts<A extends string, AS extends readonly A[]>(
-  opts: AcceptsOptions<A, AS> = {}
-): <X extends Context>(ax: Awaitable<X>) => Promise<X & AcceptedType<AS[number]>> {
+export function accepts<T extends string, TS extends readonly T[]>(
+  types: TS
+): <X extends Context>(ax: Awaitable<X>) => Promise<X & Accepted<TS[number]>> {
   return async ax => {
     const ctx = await ax;
-    const headers = ctx.request.headers;
-    const { accepts, throws } = opts;
+    const { headers } = ctx.request;
 
     const resultA = [...negotiated.mediaTypes(headers.get(CONTENT_TYPE))];
-    const accepted = resultA[0]?.type as AS[number];
+    const accepted = resultA[0]?.type as TS[number];
 
-    if (throws && accepts?.length && !accepts.includes(accepted)) throw unsupportedMediaType();
+    if (types?.length && !types.includes(accepted)) throw unsupportedMediaType();
 
     return Object.assign(ctx, { accepted })
   }
-}
 
-// export function withLanguageNegotiation<
+}
+(async () => {
+  const ctx: Context = { request: new Request('/'), effects: [] }
+  const z = await provides([])(accepts([])(ctx))
+})
+
+
+
 //   L extends string,
 //   A extends string,
 //   LS extends readonly L[],

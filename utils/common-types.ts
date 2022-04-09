@@ -4,8 +4,6 @@ export type Callable<T> = T | (() => T);
 export type Primitive = null | undefined | boolean | number | string | bigint | symbol;
 export type ToString = { toString(...args: any[]): string }
 
-export type Method = 'GET' | 'POST'
-
 // /** See: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm */
 // export type StructuredCloneable = Omit<Primitive, symbol>
 //   | Date 

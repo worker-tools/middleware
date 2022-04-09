@@ -1,3 +1,4 @@
+// deno-lint-ignore-file
 import { 
   CookieStore, CookieListItem, CookieInit, CookieList, CookieStoreDeleteOptions, CookieStoreGetOptions
 } from "https://ghuc.cc/worker-tools/request-cookie-store/index.ts";
@@ -15,8 +16,9 @@ function decodeCookieValue(item: CookieListItem | null) {
 }
 
 /**
- * A more opinionated cookie store implementation that URI-encodes cookie values 
- * and provides a promise that that resolves when async operations associated with this store have settled.
+ * A more opinionated cookie store implementation that 
+ * - URI-(en|de)codes cookie values and 
+ * - provides a promise that resolves when all async operations associated with this store have settled.
  */
 export class MiddlewareCookieStore implements CookieStore {
   #promise: ExtendablePromise<void>;

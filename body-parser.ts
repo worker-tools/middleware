@@ -1,31 +1,28 @@
+// deno-lint-ignore-file no-explicit-any
 import type { Awaitable } from "./utils/common-types.ts";
-import { combine, Context } from "./index.ts";
-import { ContentNegotiationResults, withContentNegotiation } from './content-negotiation.ts'
-import { withAccepts, AcceptedType } from './content-negotiation-2.ts'
-
-interface BodyParserOptions<T = any> {
-  defaultJSON?: T
-}
+import { combine, Context } from "./context.ts";
+import { accepts, Accepted, provides } from './content-negotiation-2.ts'
 
 export const JSON = 'application/json';
 export const FORM = 'application/x-www-form-urlencoded'
 export const FORM_DATA = 'multipart/form-data';
-/** Standard MIME type for binary data */
-export const BINARY = 'application/octet-stream';
-/** Non standard MIME type for binary data */
-export const X_BINARY = 'application/binary';
 export const TEXT_HTML  = 'text/html'
 export const TEXT_PLAIN  = 'text/plain'
+/** Standard MIME type for binary data */
+export const BINARY = 'application/octet-stream';
+/** Non-standard MIME type for binary data. Sometimes used, so included anyway. */
+export const X_BINARY = 'application/x-binary';
 
 export type BodyParsable =
-  | 'application/x-www-form-urlencoded'
-  | 'multipart/form-data'
-  | 'application/json'
-  | 'application/octet-stream'
-  | 'application/binary'
+  | typeof FORM
+  | typeof FORM_DATA
+  | typeof JSON
+  | typeof BINARY
+  | typeof X_BINARY
+  | `application/${string}+json`
   | `text/${string}`
 
-export const accepts: BodyParsable[] = [
+export const defaultBody: BodyParsable[] = [
   FORM,
   FORM_DATA,
   JSON,
@@ -36,32 +33,50 @@ export const accepts: BodyParsable[] = [
 ]
 
 export interface BodyJSONContext<J = any> {
-  accepted: 'application/json',
+  accepted: typeof JSON,
+  body: J
+  json: J
+}
+
+export interface BodyVendorJSONContext<J = any> {
+  accepted: `application/${string}+json`,
+  body: J
   json: J
 }
 
 export interface BodyFormContext {
-  accepted: 'application/x-www-form-urlencoded',
-  bodyParams: { [key: string]: string }
-  form: URLSearchParams
+  accepted: typeof FORM,
+  body: URLSearchParams,
+  bodyParams: URLSearchParams,
+  // form: { [key: string]: string }
 }
 
 export interface BodyFormDataContext {
-  accepted: 'multipart/form-data',
-  bodyParams: { [key: string]: string }
+  accepted: typeof FORM_DATA,
+  body: FormData
   formData: FormData
-  files: { [key: string]: File }
+  // form: { [key: string]: string }
+  // files: { [key: string]: File }
 }
 
 export interface BodyBinaryContext {
-  accepted: 'application/octet-stream' | 'application/binary',
-  buffer: ArrayBuffer
+  accepted: typeof BINARY | typeof X_BINARY
+  body: ArrayBuffer,
+  arrayBuffer: ArrayBuffer,
   blob: Blob,
 }
 
+// export interface BodyVendorBinaryContext {
+//   accepted: `application/vnd.${string}`,
+//   body: ArrayBuffer,
+//   buffer: ArrayBuffer,
+//   blob: Blob,
+// }
+
 export interface BodyTextContext {
   accepted: `text/${string}`,
-  text: string
+  body: string,
+  text: string,
 }
 
 // export interface BodyGenericBinaryContext {
@@ -77,17 +92,25 @@ export type BodyContext<J> =
   | BodyFormContext
   | BodyFormDataContext
   | BodyTextContext
+  | BodyVendorJSONContext<J>
 // Not possible to provide a fallback rn: https://github.com/microsoft/TypeScript/issues/48073
 
 const isString = (x: [string, FormDataEntryValue]): x is [string, string] => !(x[1] instanceof File)
 const isFile = (x: [string, FormDataEntryValue]): x is [string, File] => x[1] instanceof File
 
-export type BodyParserDeps = Context & AcceptedType<BodyParsable>
+export type BodyParserDeps = Context & Accepted<BodyParsable>
 
-export const bodyParserAccepts = withAccepts({ accepts })
+const isBodyTextContext = <J = any>(nx: BodyContext<J>): nx is BodyTextContext => 
+  nx.accepted?.startsWith('text/')
 
-export const withBodyParser = <J = any>(
-  _opt: BodyParserOptions<J> = {},
+const isBodyVendorJSONContext = <J = any>(nx: BodyContext<J>): nx is BodyVendorJSONContext<J> => 
+
+  nx.accepted?.startsWith('application/') && nx.accepted.endsWith('+json')
+// const isBodyVendorBinaryContext = <J = any>(nx: BodyContext<J>): nx is BodyVendorBinaryContext => 
+//   nx.accepted?.startsWith('application/vnd.')
+
+export const parseBody = <J = any>(
+  _defaultObj?: J,
 ) => async <X extends BodyParserDeps>(
   ax: Awaitable<X>
 ): Promise<X & BodyContext<J>> => {
@@ -96,36 +119,42 @@ export const withBodyParser = <J = any>(
 
     switch (nx.accepted) {
       case JSON: {
-        nx.json = await x.request.json()
+        nx.body = nx.json = await x.request.json()
         return nx;
       }
       case FORM: {
-        const form = new URLSearchParams(await x.request.text())
-        nx.bodyParams = Object.fromEntries(form);
+        const form = nx.body = nx.bodyParams = new URLSearchParams(await x.request.text())
+        // FIXME: Multiple values per key??
+        // nx.form = Object.fromEntries(form);
         return nx;
       }
       case FORM_DATA: {
-        const formData = nx.formData = await x.request.formData();
-        const tuples = [...formData];
-        nx.bodyParams = Object.fromEntries(tuples.filter(isString));
-        nx.files = Object.fromEntries(tuples.filter(isFile));
+        const formData = nx.body = nx.formData = await x.request.formData();
+        // FIXME: Multiple values per key??
+        // const tuples = [...formData];
+        // nx.form = Object.fromEntries(tuples.filter(isString));
+        // nx.files = Object.fromEntries(tuples.filter(isFile));
         return nx;
       }
-      case BINARY: {
-        nx.buffer = await x.request.arrayBuffer();
-        nx.blob = new Blob([nx.buffer]) // TODO: does this copy??
-        return nx;
-      }
+      case BINARY:
       case X_BINARY: {
-        nx.buffer = await x.request.arrayBuffer();
-        nx.blob = new Blob([nx.buffer]) // TODO: does this copy??
+        nx.body = nx.arrayBuffer = await x.request.arrayBuffer();
+        nx.blob = new Blob([nx.arrayBuffer]) // TODO: does this copy??
         return nx;
       }
       default: {
-        if (nx.accepted?.startsWith('text/')) {
-          nx.text = await x.request.text();
+        if (isBodyTextContext(nx)) {
+          nx.body = nx.text = await x.request.text();
+        } else if (isBodyVendorJSONContext(nx)) {
+          nx.body = nx.json = await x.request.json()
+          return nx;
+        // } else if (isBodyVendorBinaryContext(nx)) {
+        //   nx.body = nx.buffer = await x.request.arrayBuffer();
+        //   nx.blob = new Blob([nx.buffer]) // TODO: does this copy??
+        //   return nx;
         } else {
-          (<any>nx).buffer = await x.request.arrayBuffer();
+          // Anything else gets the binary treatment (outside of scope of type system)
+          (<any>nx).body = (<any>nx).buffer = await x.request.arrayBuffer();
           (<any>nx).blob = new Blob([(<any>nx).buffer])
           return nx;
         }
@@ -134,25 +163,54 @@ export const withBodyParser = <J = any>(
     }
   }
 
-export const withAnyBody = <J>(opts: BodyParserOptions<J>) => combine(withAccepts({ accepts }), withBodyParser(opts));
+export const bodyParser = <J = any>(defaultObj?: J) => 
+  combine(accepts(defaultBody), parseBody(defaultObj));
 
-// (async () => {
-//   const ctx = { request: new Request('/'), waitUntil: () => { }, effects: [] as any } as Context
+type ErrorOf<T> = T extends { error?: infer E } ? E : never
 
-//   const x = await withBodyParser({})(withAccepts({ accepts: [...accepts, 'text/foo'] })(ctx))
-//   if (x.accepted === 'application/x-www-form-urlencoded') {
-//     x.bodyParams
-//     x.form
-//   }
-//   else if (x.accepted === 'multipart/form-data') {
-//     x.formData
-//     x.bodyParams
-//     x.files
-//   } else if (x.accepted === 'application/octet-stream' || x.accepted === 'application/binary') {
-//     x.buffer
-//     x.blob
-//   } else if (x.accepted === 'text/foobar') {
-//     x.text
-//   }
-// })
+(async () => {
+  const ctx: Context = { request: new Request('/'), effects: [] }
+  const z = provides([])(accepts([])(ctx))
+
+
+  const x = await parseBody()(accepts(['text/x-foo', 'application/vnd.github.v3+json', FORM, FORM_DATA])(ctx))
+  if (x.accepted === 'application/vnd.github.v3+json') {
+    x.body
+  } else if (x.accepted === 'text/x-foo') {
+    x.body
+  } else if (x.accepted === 'application/x-www-form-urlencoded') {
+    x.body
+  }
+
+  const y = await bodyParser()(ctx)
+  if (y.accepted === 'application/x-www-form-urlencoded') {
+    y.bodyParams
+    y.body
+  }
+  if (y.accepted === 'multipart/form-data') {
+    y.formData
+    y.body
+  }
+  if (y.accepted === 'application/foobar+json') {
+    y.json
+    y.body
+  }
+  // if (x.accepted === 'application/x-www-form-urlencoded') {
+  //   x.body
+  //   x.bodyParams
+  //   x.form
+  // }
+  // else if (x.accepted === 'multipart/form-data') {
+  //   x.formData
+  //   x.form
+  //   x.files
+  // } else if (x.accepted === 'application/octet-stream' || x.accepted === 'application/x-binary') {
+  //   x.buffer
+  //   x.blob
+  // } else if (x.accepted === 'application/vnd.github.v3+json') {
+
+  // } else if (x.accepted === 'text/foo') {
+  //   x.text
+  // }
+})
 

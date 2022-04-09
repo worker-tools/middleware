@@ -1,6 +1,6 @@
-// import type { Method } from "tiny-request-router";
-import type { Awaitable, Method } from "./utils/common-types.ts";
+import type { Awaitable } from "./utils/common-types.ts";
 import type { Context } from "./index.ts";
+import type { Method } from "./cors.ts"
 
 export interface BasicsContext { 
   request: Request,
@@ -20,7 +20,7 @@ export interface BasicsContext {
 //   return [dirname, filename]
 // }
 
-export const withBasics = () => async <X extends Context>(ax: Awaitable<X>): Promise<X & BasicsContext> => {
+export const basics = () => async <X extends Context>(ax: Awaitable<X>): Promise<X & BasicsContext> => {
   const x = await ax;
   const { request, match } = x;
   const { headers } = request;
@@ -30,6 +30,6 @@ export const withBasics = () => async <X extends Context>(ax: Awaitable<X>): Pro
   const userAgent = headers.get('user-agent') ?? '';
   const ip = headers.get('x-forwarded-for') ?? x.connInfo?.remoteAddr?.hostname ?? '';
   const params = match?.pathname.groups ?? {};
-  const query = Object.fromEntries(searchParams)
+  const query = Object.fromEntries(searchParams) // FIXME: multiple values per key??
   return Object.assign(x, { headers, method, url, pathname, searchParams, userAgent, ip, params, query })
 }

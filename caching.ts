@@ -18,9 +18,9 @@ export interface CacheOptions {
 /**
  * TODO: Implement request-response
  */
-export const withCaching = (opt: CacheOptions = {}) => async <X extends Context>(ax: Awaitable<X>): Promise<X> => {
+export const caching = (opt: CacheOptions = {}) => async <X extends Context>(ax: Awaitable<X>) => {
   const x = await ax;
-  const req = x.request;
+  // const req = x.request;
   
   x.effects.push(res => {
     res.headers.set('cache-control', opt.cacheControl ?? '')

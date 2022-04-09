@@ -64,7 +64,14 @@ export const anyCORS = (options: CORSOptions = {}) => async <X extends Context>(
 }
 
 /**
- * A CORS middleware that .
+ * A CORS middleware that only grants sets the headers defined via `options`.
+ * 
+ * Note that applying this middleware to your routes isn't enough for non-GET requests.
+ * Pre-flight/OPTIONS routes need to be added manually:
+ * ```
+ * router.options('/your/path', strictCORS({ ... }), () => noContent())
+ * router.post('/your/path', strictCORS({ ... }), (req, {}) => ok())
+ * ```
  */
 export const strictCORS = (options: Required<CORSOptions>) => async <X extends Context>(ax: Awaitable<X>): Promise<X> => {
   const x = await ax;

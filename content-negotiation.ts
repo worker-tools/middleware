@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import { notAcceptable, unsupportedMediaType } from "https://ghuc.cc/worker-tools/response-creators/index.ts";
 import negotiated from 'https://esm.sh/negotiated@1.0.2/negotiated.js';
 
@@ -18,18 +19,12 @@ const CONTENT_ENCODING = 'Content-Encoding';
 
 const VARY = 'Vary';
 
-// TODO: figure out how to deal with thrown responses for all middleware
-interface Options {
-  /** Indicate if unacceptable content should throw a response */
-  throws?: boolean,
-}
-
 export interface ContentNegotiationOptions<
   T extends string,
   A extends string,
   TS extends readonly T[],
   AS extends readonly A[]
-  > extends Options {
+  > {
   /** The content types _provided_ by this endpoint. Not to be confused with `accepts`. */
   types?: TS,
   /** The body content types _acceptable_ to this endpoint. Not to be confused with `types`. */
@@ -48,7 +43,7 @@ export interface LanguageNegotiationOptions<
   A extends string,
   LS extends readonly L[],
   AS extends readonly A[]
-  > extends Options {
+  > {
   /** The languages _provided_ by this endpoint. Not to be confused with `acceptsLanguages`. */
   languages?: LS,
   /** The languages (of the request body) _acceptable_ to this endpoint. Not to be confused with `languages`. */
@@ -67,7 +62,7 @@ export interface EncodingNegotiationOptions<
   A extends string,
   ES extends readonly E[],
   AS extends readonly A[]
-  > extends Options {
+  > {
   /** The encodings _provided_ by this endpoint. Not to be confused with `acceptsEncodings`. */
   encodings?: ES,
   /** The body encodings _acceptable_ to this endpoint. Not to be confused with `encodings`. */
@@ -91,12 +86,12 @@ export function withContentNegotiation<
   return async ax => {
     const ctx = await ax;
     const headers = ctx.request.headers;
-    const { types, accepts, throws } = opts;
+    const { types, accepts } = opts;
 
     const resultA = [...negotiated.mediaTypes(headers.get(CONTENT_TYPE))];
     const accepted = resultA[0]?.type as AS[number];
 
-    if (throws && accepts?.length && !accepts.includes(accepted)) throw unsupportedMediaType();
+    if (accepts?.length && !accepts.includes(accepted)) throw unsupportedMediaType();
 
     const resultT = [...negotiated.mediaTypes(headers.get(ACCEPT))]
       .filter(t => !types || types.includes(t.type as TS[number]))
@@ -104,7 +99,7 @@ export function withContentNegotiation<
 
     const type = resultT.type as TS[number]
 
-    if (throws && headers.has(ACCEPT) && types && !type) throw notAcceptable();
+    if (headers.has(ACCEPT) && types && !type) throw notAcceptable();
     
     ctx.effects.push(response => {
       // If the server accepts more than 1 option, we set the vary header for correct caching
@@ -127,13 +122,13 @@ export function withLanguageNegotiation<
   return async ax => {
     const ctx = await ax;
     const headers = ctx.request.headers;
-    const { languages, acceptsLanguages, throws } = opts;
+    const { languages, acceptsLanguages } = opts;
 
     const resultA = [...negotiated.languages(headers.get(CONTENT_LANGUAGE))]
     const acceptedLanguage = resultA[0]?.language as AS[number];
 
     // TODO: make configurable??
-    if (throws && acceptsLanguages?.length && !acceptsLanguages.includes(acceptedLanguage)) throw notAcceptable();
+    if (acceptsLanguages?.length && !acceptsLanguages.includes(acceptedLanguage)) throw notAcceptable();
 
     const resultL = [...negotiated.languages(headers.get(ACCEPT_LANGUAGE))]
       .filter(l => !languages || languages.includes(l.language as LS[number]))
@@ -142,7 +137,7 @@ export function withLanguageNegotiation<
     const language = resultL.language as LS[number];
 
     // TODO: how to handle status errors in middleware??
-    if (throws && headers.has(ACCEPT_LANGUAGE) && languages && !language) throw notAcceptable();
+    if (headers.has(ACCEPT_LANGUAGE) && languages && !language) throw notAcceptable();
 
     ctx.effects.push(response => {
       if ((languages?.length ?? 0) > 1) response.headers.append(VARY, ACCEPT_LANGUAGE);
@@ -164,13 +159,13 @@ export function withEncodingNegotiation<
   return async ax => {
     const ctx = await ax;
     const headers = ctx.request.headers;
-    const { encodings, acceptsEncodings, throws } = opts;
+    const { encodings, acceptsEncodings } = opts;
 
     const resultA = [...negotiated.encodings(headers.get(CONTENT_ENCODING))];
     const acceptedEncoding = resultA[0]?.encoding as AS[number];
 
     // TODO: make configurable??
-    if (throws && acceptsEncodings?.length && !acceptsEncodings.includes(acceptedEncoding)) throw notAcceptable();
+    if (acceptsEncodings?.length && !acceptsEncodings.includes(acceptedEncoding)) throw notAcceptable();
 
     const resultL = [...negotiated.encodings(headers.get(ACCEPT_ENCODING))]
       .filter(e => !encodings || encodings.includes(e.encoding as ES[number]))
@@ -179,7 +174,7 @@ export function withEncodingNegotiation<
     const encoding = resultL.encoding as ES[number];
 
     // TODO: how to handle status errors in middleware??
-    if (throws && headers.has(ACCEPT_ENCODING) && encodings && !encoding) throw notAcceptable();
+    if (headers.has(ACCEPT_ENCODING) && encodings && !encoding) throw notAcceptable();
 
     ctx.effects.push(response => {
       if ((encodings?.length ?? 0) > 1) response.headers.append(VARY, ACCEPT_ENCODING);

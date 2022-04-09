@@ -9,7 +9,7 @@ export const isRejected = <T>(r: PromiseSettledResult<T>): r is PromiseRejectedR
 
 /**
  * Helper function that unwinds `Promise.allSettled`: 
- * Takes the promise returned and throws a `CombinedError` iff at least one promise settled with a rejection. 
+ * Takes the promise returned and throws a `AggregateError` iff at least one promise settled with a rejection. 
  * Otherwise returns the list of fulfilled values.
  * @param allSettledPromise A promise returned by `Promise.allSettled`
  * @returns List of fulfilled values

@@ -21,28 +21,30 @@ export async function cookiesFrom(cookieStore: CookieStore): Promise<Cookies> {
  */
 export type Cookies = { readonly [key: string]: string };
 
-interface withUnsignedCookies {
+interface AnyCookiesContext {
   cookieStore: CookieStore, 
   cookies: Cookies, 
 }
-export interface UnsignedCookiesContext extends withUnsignedCookies { 
+export interface UnsignedCookiesContext extends AnyCookiesContext { 
   unsignedCookieStore: CookieStore, 
   unsignedCookies: Cookies 
-};
-export interface SignedCookiesContext extends withUnsignedCookies { 
+}
+export interface SignedCookiesContext extends AnyCookiesContext { 
   signedCookieStore: CookieStore, 
   signedCookies: Cookies,
-};
-export interface EncryptedCookiesContext extends withUnsignedCookies { 
+  error?: { kind: 'forbidden' }
+}
+export interface EncryptedCookiesContext extends AnyCookiesContext { 
   encryptedCookieStore: CookieStore, 
   encryptedCookies: Cookies,
-};
+  error?: { kind: 'forbidden' }
+}
 
 export interface CookiesOptions extends DeriveOptions {
   keyring?: readonly CryptoKey[];
 };
 
-export const withUnsignedCookies = () => async <X extends Context>(ax: Awaitable<X>): Promise<X & UnsignedCookiesContext> => {
+export const unsignedCookies = () => async <X extends Context>(ax: Awaitable<X>): Promise<X & UnsignedCookiesContext> => {
   const x = await ax;
   const cookieStore = new RequestCookieStore(x.request);
   const requestDuration = new ResolvablePromise<void>();
@@ -68,10 +70,10 @@ export const withUnsignedCookies = () => async <X extends Context>(ax: Awaitable
   return nx;
 }
 
-export const withSignedCookies = (opts: CookiesOptions) => {
+export const signedCookies = (opts: CookiesOptions) => {
   // TODO: options to provide own cryptokey??
   // TODO: What if secret isn't known at initialization (e.g. Cloudflare Workers)
-  if (!opts.secret) throw Error('Secret missing');
+  if (!opts.secret) throw TypeError('Secret missing');
 
   const keyPromise = SignedCookieStore.deriveCryptoKey(opts);
 
@@ -118,10 +120,10 @@ export const withSignedCookies = (opts: CookiesOptions) => {
   };
 }
 
-export const withEncryptedCookies = (opts: CookiesOptions) => {
+export const encryptedCookies = (opts: CookiesOptions) => {
   // TODO: options to provide own cryptokey??
   // TODO: What if secret isn't known at initialization (e.g. Cloudflare Workers)
-  if (!opts.secret) throw Error('Secret missing');
+  if (!opts.secret) throw TypeError('Secret missing');
 
   const keyPromise = EncryptedCookieStore.deriveCryptoKey(opts);
 
