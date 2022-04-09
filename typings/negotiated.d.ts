@@ -1,4 +1,4 @@
-declare module 'https://esm.sh/v74/negotiated@1.0.2/negotiated.js' {
+declare module 'https://cdn.skypack.dev/negotiated@1.0.2' {
   export function mediaTypes(h?: string|null): IterableIterator<{ type: string, params: string, weight: number, extensions: string }>
   export function charsets(h?: string|null): IterableIterator<{ charset: string, weight: number }>
   export function encodings(h?: string|null): IterableIterator<{ encoding: string, weight: number }>

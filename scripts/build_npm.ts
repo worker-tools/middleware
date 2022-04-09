@@ -85,15 +85,15 @@ await build({
       name: "base64-encoding",
       version: "latest",
     },
-    'https://esm.sh/ts-functional-pipe@3.1.2/ts-functional-pipe.js': {
+    'https://cdn.skypack.dev/ts-functional-pipe@3.1.2': {
       name: "ts-functional-pipe",
       version: "^3.1.2",
     },
-    'https://esm.sh/negotiated@1.0.2/negotiated.js': {
+    'https://cdn.skypack.dev/negotiated@1.0.2': {
       name: "negotiated",
       version: "^1.0.2",
     },
-    "https://esm.sh/msgpackr@1.5.5/msgpackr.js": {
+    "https://cdn.skypack.dev/msgpackr@1.5.5": {
       name: "msgpackr",
       version: "^1.5.5",
     },

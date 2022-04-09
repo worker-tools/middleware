@@ -1,7 +1,7 @@
 import type { StorageArea } from 'https://ghuc.cc/qwtel/kv-storage-interface/index.d.ts';
 import { UUID } from 'https://ghuc.cc/qwtel/uuid-class/index.ts';
 import { Base64Decoder, Base64Encoder } from 'https://ghuc.cc/qwtel/base64-encoding/index.ts';
-import { Encoder as BinaryEncoder, Decoder as BinaryDecoder } from 'https://esm.sh/msgpackr@1.5.5/msgpackr.js';
+import { Encoder as BinaryEncoder, Decoder as BinaryDecoder } from 'https://cdn.skypack.dev/msgpackr@1.5.5';
 // import { Encoder as BinaryEncoder, Decoder as BinaryDecoder } from 'cbor-x';
 
 import type { Context, UnsignedCookiesContext, SignedCookiesContext } from './index.ts';

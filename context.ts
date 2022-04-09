@@ -1,5 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
-export { pipe as combine } from 'https://esm.sh/ts-functional-pipe@3.1.2/ts-functional-pipe.js';
+export { pipe as combine } from 'https://cdn.skypack.dev/ts-functional-pipe@3.1.2';
 
 import { AppendOnlyList } from "./utils/append-only-list.ts";
 import { Awaitable, Callable } from "./utils/common-types.ts";

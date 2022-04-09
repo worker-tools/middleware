@@ -1,6 +1,6 @@
 // deno-lint-ignore-file
 import { notAcceptable, unsupportedMediaType } from "https://ghuc.cc/worker-tools/response-creators/index.ts";
-import negotiated from 'https://esm.sh/negotiated@1.0.2/negotiated.js';
+import negotiated from 'https://cdn.skypack.dev/negotiated@1.0.2';
 
 import { Awaitable } from './utils/common-types.ts';
 import { Context } from './index.ts'
