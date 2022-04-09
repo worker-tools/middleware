@@ -2,6 +2,8 @@
 
 A suite of standalone HTTP server middleware meant to be used with [Worker Router](https://workers.tools/router).
 
+___Work In Progress!___
+
 ## Cookies
 Supports singed, unsigned and encrypted cookies. 
 
