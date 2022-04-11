@@ -1,4 +1,3 @@
-
 interface Headers {
     [Symbol.iterator](): IterableIterator<[string, string]>;
     /** Returns an iterator allowing to go through all key/value pairs contained in this object. */

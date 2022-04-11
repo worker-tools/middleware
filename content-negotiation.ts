@@ -56,11 +56,9 @@ export function contentTypes<T extends string, TS extends readonly T[]>(
     const ctx = await ax;
     const { headers } = ctx.request;
 
-    const resultT = [...negotiated.mediaTypes(headers.get(ACCEPT))]
-      .filter(t => !types || types.includes(t.type as TS[number]))
-      .reduce(weightSortFn, { weight: -1 } as any)
-
-    const type = resultT.type as TS[number]
+    const type = [...negotiated.mediaTypes(headers.get(ACCEPT)) as any]
+      .filter(t => !types || types.includes(t.type))
+      .reduce(weightSortFn, { weight: -1 }).type as TS[number]
 
     if (headers.has(ACCEPT) && types && !type) throw notAcceptable();
 
@@ -86,11 +84,9 @@ export function contentLanguages<T extends string, TS extends readonly T[]>(
     const ctx = await ax;
     const { headers } = ctx.request;
 
-    const resultL = [...negotiated.languages(headers.get(ACCEPT_LANGUAGE))]
-      .filter(l => !languages || languages.includes(l.language as TS[number]))
-      .reduce(weightSortFn, { weight: -1 } as any);
-
-    const language = resultL.language as TS[number];
+    const language = [...negotiated.languages(headers.get(ACCEPT_LANGUAGE)) as any]
+      .filter(l => !languages || languages.includes(l.language))
+      .reduce(weightSortFn, { weight: -1 }).language as TS[number]
 
     if (headers.has(ACCEPT_LANGUAGE) && languages && !language) throw notAcceptable();
 
@@ -116,11 +112,9 @@ export function contentEncodings<T extends string, TS extends readonly T[]>(
     const ctx = await ax;
     const { headers } = ctx.request;
 
-    const resultL = [...negotiated.encodings(headers.get(ACCEPT_ENCODING))]
-      .filter(e => !encodings || encodings.includes(e.encoding as TS[number]))
-      .reduce(weightSortFn, { weight: -1 } as any);
-
-    const encoding = resultL.encoding as TS[number];
+    const encoding = [...negotiated.encodings(headers.get(ACCEPT_ENCODING)) as any]
+      .filter(e => !encodings || encodings.includes(e.encoding))
+      .reduce(weightSortFn, { weight: -1 }).encoding as TS[number];
 
     // TODO: how to handle status errors in middleware??
     if (headers.has(ACCEPT_ENCODING) && encodings && !encoding) throw notAcceptable();
@@ -153,8 +147,8 @@ export function accepts<T extends string, TS extends readonly T[]>(
     const ctx = await ax;
     const { headers } = ctx.request;
 
-    const resultA = [...negotiated.mediaTypes(headers.get(CONTENT_TYPE))];
-    const accepted = resultA[0]?.type as TS[number];
+    const accepted = 
+      [...negotiated.mediaTypes(headers.get(CONTENT_TYPE))][0]?.type as TS[number];
 
     if (types?.length && !types.includes(accepted)) throw unsupportedMediaType();
 
@@ -173,8 +167,8 @@ export function acceptsLanguages<T extends string, TS extends readonly T[]>(
     const ctx = await ax;
     const { headers } = ctx.request;
 
-    const resultA = [...negotiated.languages(headers.get(CONTENT_LANGUAGE))]
-    const acceptedLanguage = resultA[0]?.language as TS[number];
+    const acceptedLanguage = 
+      [...negotiated.languages(headers.get(CONTENT_LANGUAGE)) as any][0]?.language as TS[number];
 
     if (languages?.length && !languages.includes(acceptedLanguage)) throw notAcceptable();
 
@@ -193,8 +187,8 @@ export function acceptsEncodings<T extends string, TS extends readonly T[]>(
     const ctx = await ax;
     const { headers } = ctx.request;
 
-    const resultA = [...negotiated.encodings(headers.get(CONTENT_ENCODING))];
-    const acceptedEncoding = resultA[0]?.encoding as TS[number];
+    const acceptedEncoding = 
+      [...negotiated.encodings(headers.get(CONTENT_ENCODING)) as any][0]?.encoding as TS[number];
 
     if (encodings?.length && !encodings.includes(acceptedEncoding)) throw notAcceptable();
 
