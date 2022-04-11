@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import type { StorageArea } from 'https://ghuc.cc/qwtel/kv-storage-interface/index.d.ts';
 import { UUID } from 'https://ghuc.cc/qwtel/uuid-class/index.ts';
 import { Base64Decoder, Base64Encoder } from 'https://ghuc.cc/qwtel/base64-encoding/index.ts';
@@ -12,7 +13,7 @@ import type { EncryptedCookiesContext } from './cookies.ts';
 const shortenId = (x: Uint8Array) => new Base64Encoder().encode(x);
 const parseUUID = (x?: string | null) => x != null ? new UUID(new Base64Decoder().decode(x)) : null
 
-type AnyRecord = Record<any, any>;
+type AnyRecord = Record<PropertyKey, any>;
 
 export type AnyCookieContext = Context & (EncryptedCookiesContext | SignedCookiesContext | UnsignedCookiesContext);
 

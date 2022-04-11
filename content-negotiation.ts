@@ -1,4 +1,4 @@
-// deno-lint-ignore-file no-explicit-any
+// deno-lint-ignore-file
 import { notAcceptable, unsupportedMediaType } from "https://ghuc.cc/worker-tools/response-creators/index.ts";
 import negotiated from 'https://cdn.skypack.dev/negotiated@1.0.2';
 
@@ -7,91 +7,54 @@ import { Context } from './index.ts'
 
 const weightSortFn = <X extends { weight: number }>(a: X, b: X) => a.weight >= b.weight ? a : b;
 
-const ACCEPT = 'Accept';
+const ACCEPT          = 'Accept';
 const ACCEPT_ENCODING = 'Accept-Encoding';
 const ACCEPT_LANGUAGE = 'Accept-Language';
 // const ACCEPT_CHARSET = 'Accept-Charset';
 
-const CONTENT_TYPE = 'Content-Type';
+const CONTENT_TYPE     = 'Content-Type';
 const CONTENT_LANGUAGE = 'Content-Language';
 const CONTENT_ENCODING = 'Content-Encoding';
 // const CHARSET = 'charset';
 
 const VARY = 'Vary';
 
-export interface ContentNegotiationOptions<
-  T extends string,
-  A extends string,
-  TS extends readonly T[],
-  AS extends readonly A[]
-  > {
-  /** The content types _provided_ by this endpoint. Not to be confused with `accepts`. */
-  types?: TS,
-  /** The body content types _acceptable_ to this endpoint. Not to be confused with `types`. */
-  accepts?: AS,
-}
-
-export interface ContentNegotiationResults<T, AT> {
-  /** The best content type acceptable _to the client_. */
+export interface ContentType<T> {
+  /** The best content type _acceptable to the client_. */
   type: T,
+}
+export interface ContentLanguage<T> {
+  /** The best language _acceptable to the client_. */
+  language: T,
+}
+export interface ContentEncoding<T> {
+  /** The best encoding _acceptable to the client_. */
+  encoding: T,
+}
+
+export interface Accepted<T> {
   /** The request's `Content-Type` header iff acceptable to this endpoint */
-  accepted: AT,
+  accepted: T,
 }
-
-export interface LanguageNegotiationOptions<
-  L extends string,
-  A extends string,
-  LS extends readonly L[],
-  AS extends readonly A[]
-  > {
-  /** The languages _provided_ by this endpoint. Not to be confused with `acceptsLanguages`. */
-  languages?: LS,
-  /** The languages (of the request body) _acceptable_ to this endpoint. Not to be confused with `languages`. */
-  acceptsLanguages?: AS,
-}
-
-export interface LanguageNegotiationResults<L, AL> {
-  /** The best language acceptable _to the client_. */
-  language: L,
+export interface AcceptedLanguage<T> {
   /** The request's `Language` header if (and only if) accepted by this endpoint */
-  acceptedLanguage: AL,
+  acceptedLanguage: T,
 }
-
-export interface EncodingNegotiationOptions<
-  E extends string,
-  A extends string,
-  ES extends readonly E[],
-  AS extends readonly A[]
-  > {
-  /** The encodings _provided_ by this endpoint. Not to be confused with `acceptsEncodings`. */
-  encodings?: ES,
-  /** The body encodings _acceptable_ to this endpoint. Not to be confused with `encodings`. */
-  acceptsEncodings?: AS,
-}
-export interface EncodingNegotiationResults<E, AE> {
-  /** The best encoding acceptable _to the client_. */
-  encoding: E,
+export interface AcceptedEncoding<T> {
   /** The request's `Encoding` header if (and only if) accepted by this endpoint */
-  acceptedEncoding: AE,
+  acceptedEncoding: T,
 }
 
-export function withContentNegotiation<
-  T extends string,
-  A extends string,
-  TS extends readonly T[],
-  AS extends readonly A[]
->(
-  opts: ContentNegotiationOptions<T, A, TS, AS> = {}
-): <X extends Context>(ax: Awaitable<X>) => Promise<X & ContentNegotiationResults<TS[number], AS[number]>> {
+/**
+ * Performs content negotiation over the content type of the response.
+ * @param types The content types _provided_ by this endpoint. 
+ */
+export function contentTypes<T extends string, TS extends readonly T[]>(
+  types: TS
+): <X extends Context>(ax: Awaitable<X>) => Promise<X & ContentType<TS[number]>> {
   return async ax => {
     const ctx = await ax;
-    const headers = ctx.request.headers;
-    const { types, accepts } = opts;
-
-    const resultA = [...negotiated.mediaTypes(headers.get(CONTENT_TYPE))];
-    const accepted = resultA[0]?.type as AS[number];
-
-    if (accepts?.length && !accepts.includes(accepted)) throw unsupportedMediaType();
+    const { headers } = ctx.request;
 
     const resultT = [...negotiated.mediaTypes(headers.get(ACCEPT))]
       .filter(t => !types || types.includes(t.type as TS[number]))
@@ -100,87 +63,141 @@ export function withContentNegotiation<
     const type = resultT.type as TS[number]
 
     if (headers.has(ACCEPT) && types && !type) throw notAcceptable();
-    
+
     ctx.effects.push(response => {
+      response.headers.set(CONTENT_TYPE, type)
       // If the server accepts more than 1 option, we set the vary header for correct caching
       if ((types?.length ?? 0) > 1) response.headers.append(VARY, ACCEPT);
       return response;
     })
 
-    return Object.assign(ctx, { type, accepted })
+    return Object.assign(ctx, { type })
   }
 }
 
-export function withLanguageNegotiation<
-  L extends string,
-  A extends string,
-  LS extends readonly L[],
-  AS extends readonly A[]
->(
-  opts: LanguageNegotiationOptions<L, A, LS, AS> = {}
-): <X extends Context>(ax: Awaitable<X>) => Promise<X & LanguageNegotiationResults<LS[number], AS[number]>> {
+/**
+ * Performs content negotiation over the content language of the response.
+ * @param languages The languages _provided_ by this endpoint. 
+ */
+export function contentLanguages<T extends string, TS extends readonly T[]>(
+  languages: TS
+): <X extends Context>(ax: Awaitable<X>) => Promise<X & ContentLanguage<TS[number]>> {
   return async ax => {
     const ctx = await ax;
-    const headers = ctx.request.headers;
-    const { languages, acceptsLanguages } = opts;
-
-    const resultA = [...negotiated.languages(headers.get(CONTENT_LANGUAGE))]
-    const acceptedLanguage = resultA[0]?.language as AS[number];
-
-    // TODO: make configurable??
-    if (acceptsLanguages?.length && !acceptsLanguages.includes(acceptedLanguage)) throw notAcceptable();
+    const { headers } = ctx.request;
 
     const resultL = [...negotiated.languages(headers.get(ACCEPT_LANGUAGE))]
-      .filter(l => !languages || languages.includes(l.language as LS[number]))
+      .filter(l => !languages || languages.includes(l.language as TS[number]))
       .reduce(weightSortFn, { weight: -1 } as any);
 
-    const language = resultL.language as LS[number];
+    const language = resultL.language as TS[number];
 
-    // TODO: how to handle status errors in middleware??
     if (headers.has(ACCEPT_LANGUAGE) && languages && !language) throw notAcceptable();
 
     ctx.effects.push(response => {
+      response.headers.set(CONTENT_LANGUAGE, language)
+      // If the server accepts more than 1 option, we set the vary header for correct caching
       if ((languages?.length ?? 0) > 1) response.headers.append(VARY, ACCEPT_LANGUAGE);
-      return response
+      return response;
     })
 
-    return Object.assign(ctx, { language, acceptedLanguage });
+    return Object.assign(ctx, { language })
   }
 }
 
-export function withEncodingNegotiation<
-  E extends string,
-  A extends string,
-  ES extends readonly E[],
-  AS extends readonly A[]
->(
-  opts: EncodingNegotiationOptions<E, A, ES, AS>
-): <X extends Context>(ax: Awaitable<X>) => Promise<X & EncodingNegotiationResults<ES[number], AS[number]>> {
+/**
+ * Performs content negotiation over the content encoding of the response.
+ * @param encodings The encodings _provided_ by this endpoint.
+ */
+export function contentEncodings<T extends string, TS extends readonly T[]>(
+  encodings: TS
+): <X extends Context>(ax: Awaitable<X>) => Promise<X & ContentEncoding<TS[number]>> {
   return async ax => {
     const ctx = await ax;
-    const headers = ctx.request.headers;
-    const { encodings, acceptsEncodings } = opts;
-
-    const resultA = [...negotiated.encodings(headers.get(CONTENT_ENCODING))];
-    const acceptedEncoding = resultA[0]?.encoding as AS[number];
-
-    // TODO: make configurable??
-    if (acceptsEncodings?.length && !acceptsEncodings.includes(acceptedEncoding)) throw notAcceptable();
+    const { headers } = ctx.request;
 
     const resultL = [...negotiated.encodings(headers.get(ACCEPT_ENCODING))]
-      .filter(e => !encodings || encodings.includes(e.encoding as ES[number]))
+      .filter(e => !encodings || encodings.includes(e.encoding as TS[number]))
       .reduce(weightSortFn, { weight: -1 } as any);
 
-    const encoding = resultL.encoding as ES[number];
+    const encoding = resultL.encoding as TS[number];
 
     // TODO: how to handle status errors in middleware??
     if (headers.has(ACCEPT_ENCODING) && encodings && !encoding) throw notAcceptable();
 
-    ctx.effects.push(response => {
+    ctx.effects!.push(response => {
+      response.headers.set(CONTENT_ENCODING, encoding)
+      // If the server accepts more than 1 option, we set the vary header for correct caching
       if ((encodings?.length ?? 0) > 1) response.headers.append(VARY, ACCEPT_ENCODING);
       return response
     })
 
-    return Object.assign(ctx, { encoding, acceptedEncoding });
+    return Object.assign(ctx, { encoding })
+  }
+}
+
+export { 
+  contentTypes as provides,
+  contentLanguages as providesLanguages,
+  contentEncodings as providesEncodings,
+}
+
+/**
+ * Determines if a request body content type is _acceptable_ to this endpoint.
+ * @param types The content types _acceptable_ to this endpoint.
+ */
+export function accepts<T extends string, TS extends readonly T[]>(
+  types: TS
+): <X extends Context>(ax: Awaitable<X>) => Promise<X & Accepted<TS[number]>> {
+  return async ax => {
+    const ctx = await ax;
+    const { headers } = ctx.request;
+
+    const resultA = [...negotiated.mediaTypes(headers.get(CONTENT_TYPE))];
+    const accepted = resultA[0]?.type as TS[number];
+
+    if (types?.length && !types.includes(accepted)) throw unsupportedMediaType();
+
+    return Object.assign(ctx, { accepted })
+  }
+}
+
+/**
+ * Determines if a request body content language is _acceptable_ to this endpoint.
+ * @param languages The languages (of the request body) _acceptable_ to this endpoint.
+ */
+export function acceptsLanguages<T extends string, TS extends readonly T[]>(
+  languages: TS
+): <X extends Context>(ax: Awaitable<X>) => Promise<X & AcceptedLanguage<TS[number]>> {
+  return async ax => {
+    const ctx = await ax;
+    const { headers } = ctx.request;
+
+    const resultA = [...negotiated.languages(headers.get(CONTENT_LANGUAGE))]
+    const acceptedLanguage = resultA[0]?.language as TS[number];
+
+    if (languages?.length && !languages.includes(acceptedLanguage)) throw notAcceptable();
+
+    return Object.assign(ctx, { acceptedLanguage })
+  }
+}
+
+/**
+ * Determines if a request body content encoding is _acceptable_ to this endpoint.
+ * @param encodings The body encodings _acceptable_ to this endpoint. 
+ */
+export function acceptsEncodings<T extends string, TS extends readonly T[]>(
+  encodings: TS
+): <X extends Context>(ax: Awaitable<X>) => Promise<X & AcceptedEncoding<TS[number]>> {
+  return async ax => {
+    const ctx = await ax;
+    const { headers } = ctx.request;
+
+    const resultA = [...negotiated.encodings(headers.get(CONTENT_ENCODING))];
+    const acceptedEncoding = resultA[0]?.encoding as TS[number];
+
+    if (encodings?.length && !encodings.includes(acceptedEncoding)) throw notAcceptable();
+
+    return Object.assign(ctx, { acceptedEncoding })
   }
 }

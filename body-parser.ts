@@ -1,7 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import type { Awaitable } from "./utils/common-types.ts";
 import { combine, Context } from "./context.ts";
-import { accepts, Accepted, provides } from './content-negotiation-2.ts'
+import { accepts, Accepted } from './content-negotiation.ts'
 
 export const JSON = 'application/json';
 export const FORM = 'application/x-www-form-urlencoded'
@@ -166,51 +166,51 @@ export const parseBody = <J = any>(
 export const bodyParser = <J = any>(defaultObj?: J) => 
   combine(accepts(defaultBody), parseBody(defaultObj));
 
-type ErrorOf<T> = T extends { error?: infer E } ? E : never
+// type ErrorOf<T> = T extends { error?: infer E } ? E : never
 
-(async () => {
-  const ctx: Context = { request: new Request('/'), effects: [] }
-  const z = provides([])(accepts([])(ctx))
+// (async () => {
+//   const ctx: Context = { request: new Request('/'), effects: [] }
+//   const z = provides([])(accepts([])(ctx))
 
 
-  const x = await parseBody()(accepts(['text/x-foo', 'application/vnd.github.v3+json', FORM, FORM_DATA])(ctx))
-  if (x.accepted === 'application/vnd.github.v3+json') {
-    x.body
-  } else if (x.accepted === 'text/x-foo') {
-    x.body
-  } else if (x.accepted === 'application/x-www-form-urlencoded') {
-    x.body
-  }
+//   const x = await parseBody()(accepts(['text/x-foo', 'application/vnd.github.v3+json', FORM, FORM_DATA])(ctx))
+//   if (x.accepted === 'application/vnd.github.v3+json') {
+//     x.body
+//   } else if (x.accepted === 'text/x-foo') {
+//     x.body
+//   } else if (x.accepted === 'application/x-www-form-urlencoded') {
+//     x.body
+//   }
 
-  const y = await bodyParser()(ctx)
-  if (y.accepted === 'application/x-www-form-urlencoded') {
-    y.bodyParams
-    y.body
-  }
-  if (y.accepted === 'multipart/form-data') {
-    y.formData
-    y.body
-  }
-  if (y.accepted === 'application/foobar+json') {
-    y.json
-    y.body
-  }
-  // if (x.accepted === 'application/x-www-form-urlencoded') {
-  //   x.body
-  //   x.bodyParams
-  //   x.form
-  // }
-  // else if (x.accepted === 'multipart/form-data') {
-  //   x.formData
-  //   x.form
-  //   x.files
-  // } else if (x.accepted === 'application/octet-stream' || x.accepted === 'application/x-binary') {
-  //   x.buffer
-  //   x.blob
-  // } else if (x.accepted === 'application/vnd.github.v3+json') {
+//   const y = await bodyParser()(ctx)
+//   if (y.accepted === 'application/x-www-form-urlencoded') {
+//     y.bodyParams
+//     y.body
+//   }
+//   if (y.accepted === 'multipart/form-data') {
+//     y.formData
+//     y.body
+//   }
+//   if (y.accepted === 'application/foobar+json') {
+//     y.json
+//     y.body
+//   }
+//   // if (x.accepted === 'application/x-www-form-urlencoded') {
+//   //   x.body
+//   //   x.bodyParams
+//   //   x.form
+//   // }
+//   // else if (x.accepted === 'multipart/form-data') {
+//   //   x.formData
+//   //   x.form
+//   //   x.files
+//   // } else if (x.accepted === 'application/octet-stream' || x.accepted === 'application/x-binary') {
+//   //   x.buffer
+//   //   x.blob
+//   // } else if (x.accepted === 'application/vnd.github.v3+json') {
 
-  // } else if (x.accepted === 'text/foo') {
-  //   x.text
-  // }
-})
+//   // } else if (x.accepted === 'text/foo') {
+//   //   x.text
+//   // }
+// })
 
