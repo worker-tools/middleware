@@ -48,6 +48,9 @@ export interface Context {
 
   /** Might be present based on environment */
   connInfo?: any
+
+  /** Might be present based on environment */
+  args?: any[]
 }
 
 /**
@@ -104,10 +107,33 @@ export function createMiddleware<Etx extends AnyRecord>(_defaultExt: Callable<Et
   return middlewareFn;
 }
 
-// createMiddleware(() => ({ foo: ''}), async ax => ({ ...ax, foo: 'bar' }))
-// const fn = createMiddleware(() => ({ foo: ''}), async ax => ({ ...await ax, foo: 'bar' }))
-// const bn = createMiddleware(() => ({ bar: ''}), async ax => ({ ...await ax, bar: 'bar' }))
-// const zn = createMiddleware(() => ({ baz: ''}), async ax => ({ ...await ax, baz: 'bar' }))
+/** @deprecated Name might change */
+export type ErrorContext = Context & { error: Error, response: Response }
+/** @deprecated Name might change */
+export type Handler<X extends Context> = (request: Request, ctx: X) => Awaitable<Response>;
+/** @deprecated Name might change */
+export type ErrorHandler<X extends ErrorContext> = (request: Request, ctx: X) => Awaitable<Response>;
+/** @deprecated Name might change */
+export type Middleware<X extends Context, Y extends Context> = (x: Awaitable<X>) => Awaitable<Y>;
+
+/** @deprecated Name & behavior might change */
+export function withMiddleware<X extends Context, EX extends ErrorContext>(middleware: Middleware<Context, X>, handler: Handler<X>, fallback?: ErrorHandler<EX>) {
+  return async (request: Request, ...args: any[]) => {
+    const effects = new EffectsList();
+    const ctx = { request, effects, args: [request, ...args] };
+    try {
+      const usrCtx = await middleware(ctx);
+      const response = handler(request, usrCtx);
+      return executeEffects(effects, response);
+    } catch (err) {
+      throw err
+      // TODO
+      // if (fallback && err instanceof Response) {
+      //    fallback(request, Object.assign(ctx, { response: err }))
+      // }
+    }
+  }
+}
 
 /**
  * Extends the lifetime of the install and activate events dispatched on the global scope as part of the

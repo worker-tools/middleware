@@ -1,10 +1,18 @@
 # Worker Middleware
 
-A suite of standalone HTTP server middleware meant to be used with [Worker Router](https://workers.tools/router).
+A suite of standalone HTTP server middlewares for Worker Environments.
 
-___Work In Progress!___
+***
 
-## Cookies
+___Work In Progress___
+
+***
+
+It is meant to be used with [Worker Router](../router), but can also be used with simple request handlers.
+
+
+## What's Included?
+### Cookies
 Supports singed, unsigned and encrypted cookies. 
 
 Signed and encrypted cookies use the Web Cryptography API internally to en/decrypt sign and verify cookies. 
@@ -21,7 +29,7 @@ For better DX, the middleware also provides a read-optimized `cookies` property,
 
 Modifying cookies is done via the cookie store. While the cookie store API is async, there is no need to await every result, as the cookie store keeps track of all operations and awaits them internally before sending the headers.
 
-## Session
+### Session
 There are two session middlewares. The cookie session encodes the entire session object into a cookie and is meant for prototyping and small use cases. 
 The storage session uses a KV Storage API-compatible storage object to persist the session object between requests. Worker Tools provides storage adapters for Cloudflare's KV storage and SQLite/Postgres for Deno.
 
@@ -47,7 +55,7 @@ router.get('/', combine(
 
 The session object is persisted at the end of the request.  
 
-## Body Parser
+### Body Parser
 Because Worker Environments already provide helpers like `.json()` and `.formData()` in the Request type, the need for a body parser is less pronounced. The value of Middleware's body parser mainly comes from content negotiation:
 
 ```js
@@ -82,7 +90,7 @@ router.any('/form', bodyParser(), (request, { accepted, ...ctx }) => {
 
 You can also limit what is acceptable to the endpoint by combining the content negotiation middleware (see below) and `bodyParserStandalone`.
 
-## Content Negotiation
+### Content Negotiation
 Provides generic content negotiation for HTTP endpoints.   
 
 Another use case is to combine with the body parser to limit what the body parser accepts:
@@ -120,6 +128,28 @@ router.get('/form', combine(
 }
 ```
 
-## Caching
+### Caching
 
-## Basics
+### Basics
+
+## Use with Netlify Functions
+```ts
+import { Context } from "netlify:edge"
+import { 
+  withMiddleware, 
+  combine, 
+  signedCookies, 
+  cookieSession, 
+} from 'https://ghuc.cc/worker-tools/middleware/index.ts';
+
+export default withMiddleware(
+  combine(
+    signedCookies({ secret: 'password123' }), 
+    cookieSession(),
+  ), 
+  async (req, { cookies, body, args: [, _context] }) => {
+    const context = _context as Context
+    return await context.next()
+  }
+)
+```

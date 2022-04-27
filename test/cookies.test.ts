@@ -12,7 +12,7 @@ const { test } = Deno;
 
 import { unsignedCookies, signedCookies } from '../cookies.ts';
 
-import { executeEffects } from '../context.ts'
+import { executeEffects, withMiddleware } from '../context.ts'
 import { iterHeadersSetCookieFix } from '../utils/headers-set-cookie-fix.ts';
 import { MiddlewareCookieStore } from '../utils/middleware-cookie-store.ts';
 
@@ -178,4 +178,13 @@ test('signing signatures with new key', async () => {
   const setCookie = (await executeEffects(effects, ok())).headers.get('set-cookie')!
   assert(!setCookie.includes('foo.sig=Sd_7Nz01uxBspv_y6Lqs8gLXXYEe8iFEN8fNouVNLzI'))
   assertStringIncludes(setCookie, 'foo.sig=-VaHv2_MfLKX42ys3uhI9fa9XhpMVmi5l7PdPAGGA9c')
+})
+
+test('with middleware', async () => {
+  const handler = withMiddleware(unsignedCookies(), (req, { cookieStore }) => {
+    cookieStore.set('bee', 'hive')
+    return ok();
+  });
+  const setCookie = (await handler(request)).headers.get('set-cookie')
+  assertEquals(setCookie, 'bee=hive')
 })
