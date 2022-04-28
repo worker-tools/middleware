@@ -15,6 +15,9 @@ import { anyCORS, strictCORS, REQUEST_METHOD, REQUEST_HEADERS, ALLOW_ORIGIN, ALL
 import { executeEffects } from '../context.ts'
 import { ok, noContent } from 'https://ghuc.cc/worker-tools/response-creators/index.ts'
 
+const handled = Promise.resolve()
+const waitUntil = () => {}
+
 test('environment', () => {
   assertExists(Request);
   assertExists(Response);
@@ -36,14 +39,14 @@ const withStrictCors = strictCORS({
 })
 
 test('any method', async () => {
-  const { effects } = await withAnyCors({ request: new Request('/', { method: 'OPTIONS', headers: { [REQUEST_METHOD]: 'POST' } }), effects: [] })
+  const { effects } = await withAnyCors({ request: new Request('/', { method: 'OPTIONS', headers: { [REQUEST_METHOD]: 'POST' } }), effects: [], handled, waitUntil })
   const { headers } = await executeEffects(effects, noContent())
   assertStringIncludes(headers.get(ALLOW_METHODS)!, 'POST')
   assertStringIncludes(headers.get(VARY)!, REQUEST_METHOD)
 })
 
 test('any headers', async () => {
-  const { effects } = await withAnyCors({ request: new Request('/', { method: 'OPTIONS', headers: { [REQUEST_HEADERS]: 'X-PINGOTHER, Content-Type' } }), effects: [] })
+  const { effects } = await withAnyCors({ request: new Request('/', { method: 'OPTIONS', headers: { [REQUEST_HEADERS]: 'X-PINGOTHER, Content-Type' } }), effects: [], handled, waitUntil })
   const { headers } = await executeEffects(effects, noContent())
   assertStringIncludes(headers.get(ALLOW_HEADERS)!, 'X-PINGOTHER')
   assertStringIncludes(headers.get(ALLOW_HEADERS)!, 'Content-Type')
@@ -51,18 +54,18 @@ test('any headers', async () => {
 })
 
 test('any origin', async () => {
-  let { effects } = await withAnyCors({ request: new Request('/', { method: 'OPTIONS', headers: { [ORIGIN]: 'foo.example.com' } }), effects: [] })
+  let { effects } = await withAnyCors({ request: new Request('/', { method: 'OPTIONS', headers: { [ORIGIN]: 'foo.example.com' } }), effects: [], handled, waitUntil })
   let { headers } = await executeEffects(effects, noContent())
   assertStringIncludes(headers.get(ALLOW_ORIGIN)!, 'foo.example.com');
 
-  ({ effects } = await withAnyCors({ request: new Request('/', { method: 'OPTIONS', headers: { [ORIGIN]: 'bar.example.com' } }), effects: [] }));
+  ({ effects } = await withAnyCors({ request: new Request('/', { method: 'OPTIONS', headers: { [ORIGIN]: 'bar.example.com' } }), effects: [], handled, waitUntil }));
   ({ headers } = await executeEffects(effects, noContent()));
   assertStringIncludes(headers.get(ALLOW_ORIGIN)!, 'bar.example.com');
   assertStringIncludes(headers.get(VARY)!, ORIGIN)
 })
 
 test('strict cors 1', async () => {
-  const { effects } = await withStrictCors({ request: new Request('/', { method: 'OPTIONS', headers: { [ORIGIN]: 'foo.example.com' } }), effects: [] })
+  const { effects } = await withStrictCors({ request: new Request('/', { method: 'OPTIONS', headers: { [ORIGIN]: 'foo.example.com' } }), effects: [], handled, waitUntil })
   const { headers } = await executeEffects(effects, noContent())
   assertEquals(headers.get(ALLOW_ORIGIN), 'localhost:12334')
 })

@@ -30,34 +30,37 @@ test('exist', () => {
   assertExists(unsignedCookies())
 })
 
+const handled = Promise.resolve()
+const waitUntil = () => {}
+
 test('basics', async () => {
-  const { cookies, cookieStore } = await unsignedCookies()({ request, effects: [] })
+  const { cookies, cookieStore } = await unsignedCookies()({ request, effects: [], handled, waitUntil  })
   assertExists(cookies)
   assertExists(cookieStore)
   assert(cookieStore instanceof MiddlewareCookieStore)
 })
 
 test('parsed cookies', async () => {
-  const { cookies } = await unsignedCookies()({ request, effects: [] })
+  const { cookies } = await unsignedCookies()({ request, effects: [], handled, waitUntil })
   assertEquals(cookies.foo, 'bar')
   assertEquals(cookies.user, 'bert')
   assertEquals(cookies.no, 'mad')
 })
 
 test('effects', async () => {
-  const { effects } = await unsignedCookies()({ request, effects: [] })
+  const { effects } = await unsignedCookies()({ request, effects: [], handled, waitUntil })
   assertEquals(effects.length, 1);
 })
 
 test('setting cookies', async () => {
-  const { cookieStore, effects } = await unsignedCookies()({ request, effects: [] })
+  const { cookieStore, effects } = await unsignedCookies()({ request, effects: [], handled, waitUntil })
   cookieStore.set('bee', 'hive')
   const setCookie = (await executeEffects(effects, ok())).headers.get('set-cookie')
   assertEquals(setCookie, 'bee=hive')
 })
 
 test('deleting cookies', async () => {
-  const { cookieStore, effects } = await unsignedCookies()({ request, effects: [] })
+  const { cookieStore, effects } = await unsignedCookies()({ request, effects: [], handled, waitUntil })
   cookieStore.delete('foo')
   const setCookie = (await executeEffects(effects, ok())).headers.get('set-cookie')!
   assertStringIncludes(setCookie, 'foo=;')
@@ -65,7 +68,7 @@ test('deleting cookies', async () => {
 })
 
 test('setting cookies 2', async () => {
-  const { cookieStore, effects } = await unsignedCookies()({ request, effects: [] })
+  const { cookieStore, effects } = await unsignedCookies()({ request, effects: [], handled, waitUntil })
   const now = Date.now()
   cookieStore.set({
     name: 'foo',
@@ -87,7 +90,7 @@ test('setting cookies 2', async () => {
 })
 
 test('cookie value encoding', async () => {
-  const { cookieStore, effects } = await unsignedCookies()({ request, effects: [] })
+  const { cookieStore, effects } = await unsignedCookies()({ request, effects: [], handled, waitUntil })
   const randomUTF8 = '⟗⥍⛨ⅸ⼩⍍⫵␇⌯ⱎ⇗⪽‷⚷␢⒏⋁⺺↲‚✰⧒Ⳟ☵⦞⩗▥⸲Ⳃ⤚⼳⢍'
   cookieStore.set('two, words', randomUTF8)
   const response = await executeEffects(effects, ok())
@@ -95,7 +98,7 @@ test('cookie value encoding', async () => {
 })
 
 test('cookie value encoding 2', async () => {
-  const { cookieStore, effects } = await unsignedCookies()({ request, effects: [] })
+  const { cookieStore, effects } = await unsignedCookies()({ request, effects: [], handled, waitUntil })
   const randomUTF8 = '⟗⥍⛨ⅸ⼩⍍⫵␇⌯ⱎ⇗⪽‷⚷␢⒏⋁⺺↲‚✰⧒Ⳟ☵⦞⩗▥⸲Ⳃ⤚⼳⢍'
   cookieStore.set({ name: 'two, words', value: randomUTF8 })
   const response = await executeEffects(effects, ok())
@@ -103,7 +106,7 @@ test('cookie value encoding 2', async () => {
 })
 
 test('setting multiple cookies', async () => {
-  const { cookieStore, effects } = await unsignedCookies()({ request, effects: [] })
+  const { cookieStore, effects } = await unsignedCookies()({ request, effects: [], handled, waitUntil })
   cookieStore.set('one', '1')
   cookieStore.set('two', '2')
   const response = await executeEffects(effects, ok())
@@ -124,14 +127,14 @@ test('throws on missing secret', () => {
 const signedCookiesFn = signedCookies({ secret })
 
 test('use with other cookie middleware', async () => {
-  const { cookies, signedCookies, unsignedCookies: usc } = await signedCookiesFn(unsignedCookies()({ request, effects: [] }))
+  const { cookies, signedCookies, unsignedCookies: usc } = await signedCookiesFn(unsignedCookies()({ request, effects: [], handled, waitUntil }))
   assertExists(usc)
   assertExists(signedCookies)
   assertEquals(cookies, signedCookies) // last one "wins"
 })
 
 test('unsigned cookies to be ignored', async () => {
-  const { cookies, cookieStore, effects } = await signedCookiesFn({ request, effects: [] })
+  const { cookies, cookieStore, effects } = await signedCookiesFn({ request, effects: [], handled, waitUntil })
   assertEquals(Object.keys(cookies).length, 0)
   assertEquals(await cookieStore.get('foo'), null);
   assertEquals(await cookieStore.getAll(), [])
@@ -144,7 +147,7 @@ const signedRequest = new Request('/', {
 })
 
 test('get signed cookie', async () => {
-  const { cookies, cookieStore, effects } = await signedCookiesFn({ request: signedRequest, effects: [] })
+  const { cookies, cookieStore, effects } = await signedCookiesFn({ request: signedRequest, effects: [], handled, waitUntil })
   assertEquals(cookies, { foo: 'bar' })
   assertEquals(await cookieStore.get('bar'), null)
 })
@@ -155,7 +158,7 @@ test('throws on forged signature', async () => {
       'Cookie': 'foo=bar; foo.sig=Sd_7Nz01uxBspv_y6Lqs8gLXXYEe8iFEN8fAAAAAAAA',
     },
   })
-  const res = await signedCookiesFn({ request: forgedRequest, effects: [] })
+  const res = await signedCookiesFn({ request: forgedRequest, effects: [], handled, waitUntil })
     .catch(x => x instanceof Response ? x : Promise.reject(x))
   assert(res instanceof Response)
   assertEquals(res.status, 403)
@@ -165,7 +168,7 @@ test('verifying signatures form previous keys', async () => {
   const { cookies, cookieStore, effects } = await signedCookies({
     secret: 'new-key',
     keyring: [await SignedCookieStore.deriveCryptoKey({ secret })]
-  })({ request: signedRequest, effects: [] })
+  })({ request: signedRequest, effects: [], handled, waitUntil })
   assertEquals(cookies, { foo: 'bar' })
 })
 
@@ -173,7 +176,7 @@ test('signing signatures with new key', async () => {
   const { cookies, cookieStore, effects } = await signedCookies({
     secret: 'new-key',
     keyring: [await SignedCookieStore.deriveCryptoKey({ secret })]
-  })({ request: signedRequest, effects: [] })
+  })({ request: signedRequest, effects: [], handled, waitUntil })
   cookieStore.set('foo', 'bar') // no await
   const setCookie = (await executeEffects(effects, ok())).headers.get('set-cookie')!
   assert(!setCookie.includes('foo.sig=Sd_7Nz01uxBspv_y6Lqs8gLXXYEe8iFEN8fNouVNLzI'))

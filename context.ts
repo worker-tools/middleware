@@ -1,5 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 export { pipe as combine } from 'https://cdn.skypack.dev/ts-functional-pipe@3.1.2';
+import { ResolvablePromise } from 'https://ghuc.cc/worker-tools/resolvable-promise/index.ts'
 
 import { AppendOnlyList } from "./utils/append-only-list.ts";
 import { Awaitable, Callable } from "./utils/common-types.ts";
@@ -27,7 +28,10 @@ export interface Context {
   /**
    * TODO
    */
-  waitUntil?: (f: any) => void,
+  waitUntil: (f: any) => void,
+
+  /** https://github.com/w3c/ServiceWorker/issues/1397 */
+  handled: Promise<void>
 
   /**
    * The URL pattern match that caused this handler to run. See the URL Pattern API for more.
@@ -119,12 +123,15 @@ export type Middleware<X extends Context, Y extends Context> = (x: Awaitable<X>)
 /** @deprecated Name & behavior might change */
 export function withMiddleware<X extends Context, EX extends ErrorContext>(middleware: Middleware<Context, X>, handler: Handler<X>, fallback?: ErrorHandler<EX>) {
   return async (request: Request, ...args: any[]) => {
+    const handled = new ResolvablePromise<void>()
     const effects = new EffectsList();
-    const ctx = { request, effects, args: [request, ...args] };
+    const ctx = { request, effects, handled, args: [request, ...args], waitUntil: () => {} };
     try {
       const usrCtx = await middleware(ctx);
-      const response = handler(request, usrCtx);
-      return executeEffects(effects, response);
+      const userResponse = handler(request, usrCtx);
+      const response = await executeEffects(effects, userResponse);
+      handled.resolve(Promise.resolve()) // same as queueMicrotask
+      return response;
     } catch (err) {
       throw err
       // TODO
@@ -168,6 +175,7 @@ export interface FetchEvent extends ExtendableEvent {
   readonly replacesClientId: string;
   readonly request: Request;
   readonly resultingClientId: string;
+  readonly handled: Promise<void>;
   respondWith(r: Response | Promise<Response>): void;
 }
 
