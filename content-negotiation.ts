@@ -63,7 +63,7 @@ export function contentTypes<T extends string, TS extends readonly T[]>(
     if (headers.has(ACCEPT) && types && !type) throw notAcceptable();
 
     ctx.effects.push(response => {
-      response.headers.set(CONTENT_TYPE, type)
+      if (!response.headers.has(CONTENT_TYPE)) response.headers.set(CONTENT_TYPE, type)
       // If the server accepts more than 1 option, we set the vary header for correct caching
       if ((types?.length ?? 0) > 1) response.headers.append(VARY, ACCEPT);
       return response;
@@ -91,7 +91,7 @@ export function contentLanguages<T extends string, TS extends readonly T[]>(
     if (headers.has(ACCEPT_LANGUAGE) && languages && !language) throw notAcceptable();
 
     ctx.effects.push(response => {
-      response.headers.set(CONTENT_LANGUAGE, language)
+      if (!response.headers.has(CONTENT_LANGUAGE)) response.headers.set(CONTENT_LANGUAGE, language)
       // If the server accepts more than 1 option, we set the vary header for correct caching
       if ((languages?.length ?? 0) > 1) response.headers.append(VARY, ACCEPT_LANGUAGE);
       return response;
@@ -120,7 +120,7 @@ export function contentEncodings<T extends string, TS extends readonly T[]>(
     if (headers.has(ACCEPT_ENCODING) && encodings && !encoding) throw notAcceptable();
 
     ctx.effects!.push(response => {
-      response.headers.set(CONTENT_ENCODING, encoding)
+      if (!response.headers.has(CONTENT_ENCODING)) response.headers.set(CONTENT_ENCODING, encoding)
       // If the server accepts more than 1 option, we set the vary header for correct caching
       if ((encodings?.length ?? 0) > 1) response.headers.append(VARY, ACCEPT_ENCODING);
       return response
