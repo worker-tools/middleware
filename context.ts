@@ -5,9 +5,6 @@ import { ResolvablePromise } from 'https://ghuc.cc/worker-tools/resolvable-promi
 import { AppendOnlyList } from "./utils/append-only-list.ts";
 import { Awaitable, Callable } from "./utils/common-types.ts";
 
-import type { URLPatternInit, URLPatternComponentResult, URLPatternInput, URLPatternResult } from 'https://ghuc.cc/kenchris/urlpattern-polyfill@a076337/src/index.d.ts';
-export type { URLPatternInit, URLPatternComponentResult, URLPatternInput, URLPatternResult }
-
 export type ResponseEffect = (r: Response) => void | Awaitable<Response>
 
 export class EffectsList extends AppendOnlyList<ResponseEffect> {}
@@ -177,5 +174,38 @@ export interface FetchEvent extends ExtendableEvent {
   readonly resultingClientId: string;
   readonly handled: Promise<void>;
   respondWith(r: Response | Promise<Response>): void;
+}
+
+export type URLPatternInput = URLPatternInit | string;
+
+export interface URLPatternInit {
+  baseURL?: string;
+  username?: string;
+  password?: string;
+  protocol?: string;
+  hostname?: string;
+  port?: string;
+  pathname?: string;
+  search?: string;
+  hash?: string;
+}
+
+export interface URLPatternResult {
+  inputs: [URLPatternInit] | [URLPatternInit, string];
+  protocol: URLPatternComponentResult;
+  username: URLPatternComponentResult;
+  password: URLPatternComponentResult;
+  hostname: URLPatternComponentResult;
+  port: URLPatternComponentResult;
+  pathname: URLPatternComponentResult;
+  search: URLPatternComponentResult;
+  hash: URLPatternComponentResult;
+}
+
+export interface URLPatternComponentResult {
+  input: string;
+  groups: {
+      [key: string]: string | undefined;
+  };
 }
 

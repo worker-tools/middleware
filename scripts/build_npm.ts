@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run -A
+#!/usr/bin/env -S deno run --allow-read --allow-write=./,/Users/qwtel/Library/Caches/deno --allow-net --allow-env=HOME,DENO_AUTH_TOKENS,DENO_DIR --allow-run=git,pnpm
 
 // ex. scripts/build_npm.ts
 import { basename, extname } from "https://deno.land/std@0.133.0/path/mod.ts";
@@ -68,11 +68,11 @@ await build({
     target: 'ES2019',
   },
   mappings: {
-    "https://ghuc.cc/kenchris/urlpattern-polyfill@a076337/src/index.d.ts": {
-      name: "urlpattern-polyfill",
-      version: "^4.0.1",
-      subPath: 'dist/index.d.ts'
-    },
+    // "https://ghuc.cc/kenchris/urlpattern-polyfill@69ac528/src/index.d.ts": {
+    //   name: "urlpattern-polyfill",
+    //   version: "^4.0.3",
+    //   subPath: 'dist/index.d.ts'
+    // },
     'https://ghuc.cc/qwtel/kv-storage-interface/index.d.ts': {
       name: "kv-storage-interface",
       version: "^0.2.0",
