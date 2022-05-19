@@ -1,10 +1,10 @@
 # Worker Middleware
 
-A suite of standalone HTTP server middlewares for Worker Environments.
+A suite of standalone HTTP server middlewares for Worker Runtimes.
 
 ***
 
-___Work In Progress___
+__Work In Progress__
 
 ***
 
@@ -56,7 +56,7 @@ router.get('/', combine(
 The session object is persisted at the end of the request.  
 
 ### Body Parser
-Because Worker Environments already provide helpers like `.json()` and `.formData()` in the Request type, the need for a body parser is less pronounced. The value of Middleware's body parser mainly comes from content negotiation:
+Because Worker Runtimes already provide helpers like `.json()` and `.formData()` in the Request type, the need for a body parser is less pronounced. The value of Middleware's body parser mainly comes from content negotiation:
 
 ```js
 router.any('/form', bodyParser(), (request, { accepted, ...ctx }) => {

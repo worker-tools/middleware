@@ -37,7 +37,7 @@ export interface Context {
 
   /**
    * Only available if the router is used via `fetchEventListener`.
-   * Many Worker Environments such as Deno an CF module workers don't provide fetch events. 
+   * Many Worker Runtimes such as Deno an CF module workers don't provide fetch events. 
    */
   event?: FetchEvent, 
 

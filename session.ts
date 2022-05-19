@@ -44,7 +44,7 @@ export interface StorageSessionOptions<S extends AnyRecord = AnyRecord> extends 
 }
 
 /**
- * Cookie session middleware for worker environments. 
+ * Cookie session middleware for worker runtimes. 
  * 
  * Requires a cookie store, preferably encrypted or signed.
  * 
@@ -96,7 +96,7 @@ export function withCookieSession<S extends AnyRecord = AnyRecord>(
 }
 
 /**
- * Session middleware for worker environments.
+ * Session middleware for worker runtimes.
  * 
  * Need to provide a `StorageArea` to persist the session between requests. 
  * There are implementations for both browsers (IndexedDB-backed) and Cloudflare Workers (KV storage backed) available.
