@@ -85,7 +85,7 @@ await build({
       name: "base64-encoding",
       version: "latest",
     },
-    'https://cdn.skypack.dev/ts-functional-pipe@3.1.2': {
+    'https://cdn.skypack.dev/ts-functional-pipe@3.1.2?dts': {
       name: "ts-functional-pipe",
       version: "^3.1.2",
     },

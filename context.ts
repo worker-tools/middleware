@@ -1,5 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
-export { pipe as combine } from 'https://cdn.skypack.dev/ts-functional-pipe@3.1.2';
+export { pipe as combine } from 'https://cdn.skypack.dev/ts-functional-pipe@3.1.2?dts';
 import { ResolvablePromise } from 'https://ghuc.cc/worker-tools/resolvable-promise/index.ts'
 
 import { AppendOnlyList } from "./utils/append-only-list.ts";
