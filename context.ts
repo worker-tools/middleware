@@ -55,6 +55,19 @@ export interface Context {
 }
 
 /**
+ * Helper type to get the context type of a given middleware function.
+ * 
+ * Example:
+ * ```ts
+ * const mw = combine(basics(), contentTypes(['text/html', 'application/json']))
+ * type MWContext = ContextOf<typeof mw>;
+ * const handler = (req: Request, context: MWContext) => ok()
+ * new WorkerRouter().get('/', mw, handler)
+ * ```
+ */
+export type ContextOf<MW extends (...args: any[]) => Awaitable<Context>> = Awaited<ReturnType<MW>>
+
+/**
  * @deprecated Function might change name
  * @param effects 
  * @param response 
