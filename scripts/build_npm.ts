@@ -75,7 +75,7 @@ await build({
       name: "negotiated",
       version: "^1.0.2",
     },
-    "https://cdn.skypack.dev/msgpackr@1.5.5": {
+    "https://cdn.skypack.dev/msgpackr@1.5.5?dts": {
       name: "msgpackr",
       version: "^1.5.5",
     },
