@@ -8,12 +8,12 @@ import {
   assertThrows,
   assertRejects,
 } from 'https://deno.land/std@0.133.0/testing/asserts.ts'
-import { spy, assertSpyCall, assertSpyCalls } from "https://deno.land/std@0.133.0/testing/mock.ts";
+// import { spy, assertSpyCall, assertSpyCalls } from "https://deno.land/std@0.133.0/testing/mock.ts";
 const { test } = Deno;
 
 import { unsignedCookies } from '../cookies.ts';
 import { cookieSession, storageSession } from '../session.ts';
-import { StorageArea } from 'https://ghuc.cc/worker-tools/kv-storage/index.ts'
+import { StorageArea } from 'https://ghuc.cc/worker-tools/deno-kv-storage/mod.ts'
 import 'https://ghuc.cc/worker-tools/deno-kv-storage/adapters/sqlite.ts'
 import { StreamResponse } from 'https://ghuc.cc/worker-tools/stream-response/index.ts'
 
@@ -27,7 +27,7 @@ const cookieMW = combine(
   }),
 );
 
-const storage = new StorageArea('session', { url: 'sqlite://session.sqlite' })
+const storage = new StorageArea('session', { url: 'sqlite://memory' })
 
 test('cookie session', async () => {
   let i = 0

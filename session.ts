@@ -1,17 +1,14 @@
 // deno-lint-ignore-file no-explicit-any
 import type { StorageArea } from 'https://ghuc.cc/qwtel/kv-storage-interface/index.d.ts';
-import { UUID } from 'https://ghuc.cc/qwtel/uuid-class/index.ts';
+import { WebUUID } from 'https://ghuc.cc/qwtel/web-uuid/index.ts';
 import { Base64Decoder, Base64Encoder } from 'https://ghuc.cc/qwtel/base64-encoding/index.ts';
 
 import { createDraft, finishDraft, Draft, enableMapSet } from 'https://cdn.skypack.dev/immer@9.0.14?dts';
 import { Encoder as BinaryEncoder, Decoder as BinaryDecoder } from 'https://cdn.skypack.dev/msgpackr@1.5.5?dts';
 
-import type { Context, UnsignedCookiesContext, SignedCookiesContext } from './index.ts';
+import type { Context } from './context.ts';
 import type { Awaitable } from './utils/common-types.ts';
-import type { EncryptedCookiesContext } from './cookies.ts';
-
-const shortenId = (x: Uint8Array) => new Base64Encoder({ url: true }).encode(x);
-const parseUUID = (x?: string | null) => x != null ? new UUID(new Base64Decoder().decode(x)) : null
+import type { UnsignedCookiesContext, SignedCookiesContext, EncryptedCookiesContext } from './cookies.ts';
 
 enableMapSet();
 // enablePatches();
@@ -36,7 +33,7 @@ export interface CookieSessionOptions<S extends Rec = Rec> {
   /** Session expiration time in seconds. Defaults to five minutes. */
   expirationTtl?: number,
 
-  /** TODO */
+  /** Provide a record that serves as the default session object. Also used for type inference. */
   defaultSession?: S,
 }
 
@@ -51,7 +48,7 @@ export interface StorageSessionOptions<S extends Rec = Rec> extends CookieSessio
  * Requires a cookie store, preferably encrypted or signed.
  * 
  * Important: This will serialize the entire session data and store it in a cookie. It is sent with every request!
- * Only applicable for small session objects. Use `withStorageSession` for a traditional, KV store-backed session.
+ * Only applicable for small session objects. Use `storageSession` for a traditional, KV store-backed session.
  */
 export function cookieSession<S extends Rec = Rec>(
   options: CookieSessionOptions<S> = {}
@@ -104,7 +101,7 @@ export function storageSession<S extends Rec = Rec>(
       const { cookies, cookieStore } = ctx;
       const { storage, defaultSession, cookieName = 'sid', expirationTtl = 5 * 60 } = options
 
-      const [id, session, orig] = await getStorageSessionProxy<S>(cookies[cookieName], {
+      const [sid, session, orig] = await getStorageSessionProxy<S>(cookies[cookieName], {
         storage,
         cookieName,
         expirationTtl,
@@ -117,7 +114,7 @@ export function storageSession<S extends Rec = Rec>(
         await ctx.closed;
         const next: S = finishDraft(session)
         if (next !== orig) {
-          await storage.set(id, next, { expirationTtl });
+          await storage.set(sid, next, { expirationTtl });
         }
       })())
 
@@ -125,7 +122,7 @@ export function storageSession<S extends Rec = Rec>(
         if (!cookies[cookieName]) {
           cookieStore.set({
             name: cookieName,
-            value: shortenId(id),
+            value: sid.id,
             expires: new Date(Date.now() + expirationTtl * 1000),
             sameSite: 'lax',
             httpOnly: true,
@@ -158,8 +155,8 @@ function getCookieSessionProxy<S extends Rec = Rec>(
 async function getStorageSessionProxy<S extends Rec = Rec>(
   cookieVal: string | null | undefined,
   { defaultSession, storage }: StorageSessionOptions<S>,
-): Promise<[UUID, Draft<S>, S]> {
-  const sessionId = parseUUID(cookieVal) ?? new UUID();
+): Promise<[WebUUID, Draft<S>, S]> {
+  const sessionId = cookieVal ? new WebUUID(cookieVal) : WebUUID.v4()
   const obj = (await storage.get<S>(sessionId)) ?? defaultSession ?? <S>{};
   const draft = createDraft(obj)
   return [sessionId, draft, obj];

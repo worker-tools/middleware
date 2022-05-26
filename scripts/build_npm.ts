@@ -54,8 +54,8 @@ await build({
       name: "kv-storage-interface",
       version: "^0.2.0",
     },
-    "https://ghuc.cc/qwtel/uuid-class/index.ts": {
-      name: "uuid-class",
+    "https://ghuc.cc/qwtel/web-uuid/index.ts": {
+      name: "web-uuid",
       version: "latest",
     },
     "https://ghuc.cc/qwtel/base64-encoding/index.ts": {
