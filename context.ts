@@ -1,9 +1,9 @@
 // deno-lint-ignore-file no-explicit-any
 export { pipe as combine } from 'https://cdn.skypack.dev/ts-functional-pipe@3.1.2?dts';
-import { ResolvablePromise } from 'https://ghuc.cc/worker-tools/resolvable-promise/index.ts'
 
 import { AppendOnlyList } from "./utils/append-only-list.ts";
 import { Awaitable, Callable } from "./utils/common-types.ts";
+import { providePromises, closedResponse } from './utils/context.ts'
 
 export type ResponseEffect = (r: Response) => void | Awaitable<Response>
 
@@ -27,8 +27,18 @@ export interface Context {
    */
   waitUntil: (f: any) => void,
 
-  /** https://github.com/w3c/ServiceWorker/issues/1397 */
+  /** 
+   * A promise that resolves when middleware is done applying effects. 
+   * Related: https://github.com/w3c/ServiceWorker/issues/1397 
+   */
   handled: Promise<Response>
+
+  /** 
+   * A promise that resolves when the entire response body has been written to the wire, 
+   * or if the stream has been closed for any other reason.
+   * Most likely useful when combined with streaming responses.
+   */
+  closed?: Promise<void>
 
   /**
    * The URL pattern match that caused this handler to run. See the URL Pattern API for more.
@@ -115,7 +125,6 @@ export type AnyRecord = Record<PropertyKey, unknown>
  * @param _defaultExt The default extension to the current context. Can also be a function that returns the extension object, to avoid unnecessary memory allocation.
  * @param middlewareFn A middleware functions: Adds the keys listed in `defaultExt` to the context
  * @returns The provided `middlewareFn` with type annotations inferred based on `defaultExt`
- * @deprecated This feature is unstable. Might remove or rename later.
  */
 export function createMiddleware<Etx extends AnyRecord>(_defaultExt: Callable<Etx>, middlewareFn: <Ctx extends Context>(ax: Awaitable<Ctx>) => Awaitable<Ctx & Etx>) {
   return middlewareFn;
@@ -130,17 +139,20 @@ export type ErrorHandler<X extends ErrorContext> = (request: Request, ctx: X) =>
 /** @deprecated Name might change */
 export type Middleware<X extends Context, Y extends Context> = (x: Awaitable<X>) => Awaitable<Y>;
 
-/** @deprecated Name & behavior might change */
-export function withMiddleware<X extends Context, EX extends ErrorContext>(middleware: Middleware<Context, X>, handler: Handler<X>, fallback?: ErrorHandler<EX>) {
+/** 
+ * Takes a handler function of the form `(x: Request, ctx: Context) => Awaitable<Response>` and applies middleware to it.
+ * @deprecated Name might change, errorHandler not implemented
+ */
+export function withMiddleware<X extends Context, EX extends ErrorContext>(middleware: Middleware<Context, X>, handler: Handler<X>, _errorHandler?: ErrorHandler<EX>) {
   return async (request: Request, ...args: any[]) => {
-    const handled = new ResolvablePromise<Response>()
+    const [ps, rs] = providePromises()
     const effects = new EffectsList();
-    const ctx = { request, effects, handled, args: [request, ...args], waitUntil: () => {} };
+    const ctx = { request, effects, ...ps, args: [request, ...args], waitUntil: () => {} };
     try {
-      const usrCtx = await middleware(ctx);
-      const userResponse = handler(request, usrCtx);
-      const response = await executeEffects(effects, userResponse);
-      handled.resolve(response)
+      const userCtx = await middleware(ctx);
+      const userRes = handler(request, userCtx)
+      const response = closedResponse(rs.close, await executeEffects(effects, userRes))
+      rs.handle.resolve(response)
       return response;
     } catch (err) {
       throw err

@@ -50,11 +50,6 @@ await build({
     target: 'ES2019',
   },
   mappings: {
-    // "https://ghuc.cc/kenchris/urlpattern-polyfill@69ac528/src/index.d.ts": {
-    //   name: "urlpattern-polyfill",
-    //   version: "^4.0.3",
-    //   subPath: 'dist/index.d.ts'
-    // },
     'https://ghuc.cc/qwtel/kv-storage-interface/index.d.ts': {
       name: "kv-storage-interface",
       version: "^0.2.0",
@@ -78,6 +73,10 @@ await build({
     "https://cdn.skypack.dev/msgpackr@1.5.5?dts": {
       name: "msgpackr",
       version: "^1.5.5",
+    },
+    "https://cdn.skypack.dev/immer@9.0.14?dts": {
+      name: "immer",
+      version: "^9.0.14",
     },
     "https://ghuc.cc/worker-tools/request-cookie-store/index.ts": {
       name: "@worker-tools/request-cookie-store",

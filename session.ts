@@ -3,14 +3,18 @@ import type { StorageArea } from 'https://ghuc.cc/qwtel/kv-storage-interface/ind
 import { UUID } from 'https://ghuc.cc/qwtel/uuid-class/index.ts';
 import { Base64Decoder, Base64Encoder } from 'https://ghuc.cc/qwtel/base64-encoding/index.ts';
 
+import { createDraft, finishDraft, Draft, enableMapSet } from 'https://cdn.skypack.dev/immer@9.0.14?dts';
 import { Encoder as BinaryEncoder, Decoder as BinaryDecoder } from 'https://cdn.skypack.dev/msgpackr@1.5.5?dts';
 
 import type { Context, UnsignedCookiesContext, SignedCookiesContext } from './index.ts';
 import type { Awaitable } from './utils/common-types.ts';
 import type { EncryptedCookiesContext } from './cookies.ts';
 
-const shortenId = (x: Uint8Array) => new Base64Encoder().encode(x);
+const shortenId = (x: Uint8Array) => new Base64Encoder({ url: true }).encode(x);
 const parseUUID = (x?: string | null) => x != null ? new UUID(new Base64Decoder().decode(x)) : null
+
+enableMapSet();
+// enablePatches();
 
 type Rec = Record<PropertyKey, any>;
 type CookieContext = Context & (EncryptedCookiesContext | SignedCookiesContext | UnsignedCookiesContext);
@@ -50,36 +54,27 @@ export interface StorageSessionOptions<S extends Rec = Rec> extends CookieSessio
  * Only applicable for small session objects. Use `withStorageSession` for a traditional, KV store-backed session.
  */
 export function cookieSession<S extends Rec = Rec>(
-  { defaultSession = {}, cookieName = 'session', expirationTtl = 5 * 60 }: CookieSessionOptions = {}
+  options: CookieSessionOptions<S> = {}
 ): <X extends CookieContext>(ax: Awaitable<X>) => Promise<X & CookieSessionContext<S>> {
   return async ax => {
     const ctx = await ax;
     const { cookieStore, cookies } = ctx;
-    // const { encryptedCookies, encryptedCookieStore } = ctx as EncryptedCookiesContext;
-    // const { signedCookies, signedCookieStore } = ctx as SignedCookiesContext;
-    // const { unsignedCookies, unsignedCookieStore } = ctx as UnsignedCookiesContext;
-    // const cookieStore = encryptedCookieStore ?? signedCookieStore ?? unsignedCookieStore;
-    // const cookies = encryptedCookies ?? signedCookies ?? unsignedCookies;
+    const { defaultSession, cookieName = 'obj', expirationTtl = 5 * 60 } = options
 
-    const controller = new AbortController();
-
-    const [, cookieSession, flags] = await getCookieSessionProxy<S>(cookies[cookieName], ctx, {
+    const [session, orig] = getCookieSessionProxy<S>(cookies[cookieName], {
       cookieName,
       expirationTtl,
       defaultSession,
-      signal: controller.signal,
     });
 
-    const newContext =  Object.assign(ctx, { session: cookieSession, cookieSession })
+    const newContext =  Object.assign(ctx, { session, cookieSession: session })
 
     ctx.effects.push(response => {
-      // Indicate that cookie session can no longer be modified.
-      controller.abort();
-
-      if (flags.dirty) {
+      const next: S = finishDraft(session)
+      if (next !== orig) {
         cookieStore.set({
           name: cookieName,
-          value: stringifySessionCookie(cookieSession),
+          value: stringifySessionCookie(next),
           expires: new Date(Date.now() + expirationTtl * 1000),
           sameSite: 'lax',
           httpOnly: true,
@@ -102,14 +97,14 @@ export function cookieSession<S extends Rec = Rec>(
  */
 // FIXME: Will "block" until session object is retrieved from KV => provide "unyielding" version that returns a promise?
 export function storageSession<S extends Rec = Rec>(
-  options: StorageSessionOptions
+  options: StorageSessionOptions<S>
 ): <X extends CookieContext>(ax: Awaitable<X>) => Promise<X & StorageSessionContext<S>> {
     return async ax => {
       const ctx = await ax;
       const { cookies, cookieStore } = ctx;
-      const { storage, defaultSession = {}, cookieName = 'sid', expirationTtl = 5 * 60 } = options
+      const { storage, defaultSession, cookieName = 'sid', expirationTtl = 5 * 60 } = options
 
-      const [id, session, flag] = await getStorageSessionProxy<S>(cookies[cookieName], {
+      const [id, session, orig] = await getStorageSessionProxy<S>(cookies[cookieName], {
         storage,
         cookieName,
         expirationTtl,
@@ -118,9 +113,16 @@ export function storageSession<S extends Rec = Rec>(
 
       const newContext = Object.assign(ctx, { session, storageSession: session })
 
+      ctx.waitUntil((async () => {
+        await ctx.closed;
+        const next: S = finishDraft(session)
+        if (next !== orig) {
+          await storage.set(id, next, { expirationTtl });
+        }
+      })())
+
       ctx.effects.push(response => {
         if (!cookies[cookieName]) {
-          // no await necessary
           cookieStore.set({
             name: cookieName,
             value: shortenId(id),
@@ -128,13 +130,6 @@ export function storageSession<S extends Rec = Rec>(
             sameSite: 'lax',
             httpOnly: true,
           });
-        }
-
-        if (flag.dirty) {
-          ctx.waitUntil((async () => {
-            await ctx.handled
-            await storage.set(id, session, { expirationTtl });
-          })())
         }
 
         return response;
@@ -152,51 +147,20 @@ const parseSessionCookie = <T>(value: string) =>
 
 function getCookieSessionProxy<S extends Rec = Rec>(
   cookieVal: string | null | undefined,
-  _ctx: { waitUntil?: (f: any) => void },
-  { defaultSession, signal }: CookieSessionOptions & { signal: AbortSignal },
-): Promise<[null, S, { dirty: boolean }]> {
-  const obj = (cookieVal && parseSessionCookie<S>(cookieVal)) || defaultSession;
+  { defaultSession }: CookieSessionOptions<S>,
+): [Draft<S>, S] {
+  const obj = cookieVal ? parseSessionCookie<S>(cookieVal) : defaultSession ?? <S>{};
+  const draft = createDraft(obj)
+  return [draft, obj]
 
-  const flags = { dirty: false };
-
-  return Promise.resolve([null, new Proxy(<any>obj, {
-    set(target, prop, value) {
-      if (signal.aborted)
-        throw Error('Headers already sent, cookie session can no longer be modified. Use storage session instead to remove this limitation.');
-      flags.dirty = true;
-      target[prop] = value;
-      return true;
-    },
-
-    deleteProperty(target, prop) {
-      if (signal.aborted)
-        throw Error('Headers already sent, cookie session can no longer be modified. Use storage session instead to remove this limitation.');
-      flags.dirty = true;
-      delete target[prop];
-      return true;
-    },
-  }), flags]);
 }
 
 async function getStorageSessionProxy<S extends Rec = Rec>(
   cookieVal: string | null | undefined,
-  { storage, defaultSession }: Required<StorageSessionOptions<S>>,
-): Promise<[UUID, S, { dirty: boolean }]> {
+  { defaultSession, storage }: StorageSessionOptions<S>,
+): Promise<[UUID, Draft<S>, S]> {
   const sessionId = parseUUID(cookieVal) ?? new UUID();
-  const obj = (await storage.get<S>(sessionId)) ?? defaultSession;
-
-  const flags = { dirty: false };
-
-  return [sessionId, new Proxy(<any>obj, {
-    set(target, prop, value) {
-      flags.dirty = true;
-      target[prop] = value;
-      return true;
-    },
-    deleteProperty(target, prop) {
-      flags.dirty = true;
-      delete target[prop];
-      return true;
-    },
-  }), flags];
+  const obj = (await storage.get<S>(sessionId)) ?? defaultSession ?? <S>{};
+  const draft = createDraft(obj)
+  return [sessionId, draft, obj];
 }
