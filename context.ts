@@ -1,9 +1,9 @@
 // deno-lint-ignore-file no-explicit-any
 export { pipe as combine } from 'https://cdn.skypack.dev/ts-functional-pipe@3.1.2?dts';
+import { ResolvablePromise } from 'https://ghuc.cc/worker-tools/resolvable-promise/index.ts'
 
 import { AppendOnlyList } from "./utils/append-only-list.ts";
 import { Awaitable, Callable } from "./utils/common-types.ts";
-import { providePromises, closedResponse } from './utils/context.ts'
 
 export type ResponseEffect = (r: Response) => void | Awaitable<Response>
 
@@ -79,9 +79,6 @@ export type ContextOf<MW extends (...args: any[]) => Awaitable<Context>> = Await
 
 /**
  * @deprecated Function might change name
- * @param effects 
- * @param response 
- * @returns 
  */
 export function executeEffects(effects: EffectsList, response: Awaitable<Response>) {
   // TODO: to reduce or reduceRight, that is the question...
@@ -94,7 +91,7 @@ export function executeEffects(effects: EffectsList, response: Awaitable<Respons
 }
 
 /** Any record of unknown values */
-export type AnyRecord = Record<PropertyKey, unknown>
+export type Rec = Record<PropertyKey, any>
 
 /**
  * A helper function to create user-defined middleware. 
@@ -126,7 +123,7 @@ export type AnyRecord = Record<PropertyKey, unknown>
  * @param middlewareFn A middleware functions: Adds the keys listed in `defaultExt` to the context
  * @returns The provided `middlewareFn` with type annotations inferred based on `defaultExt`
  */
-export function createMiddleware<Etx extends AnyRecord>(_defaultExt: Callable<Etx>, middlewareFn: <Ctx extends Context>(ax: Awaitable<Ctx>) => Awaitable<Ctx & Etx>) {
+export function createMiddleware<Etx extends Rec>(_defaultExt: Callable<Etx>, middlewareFn: <Ctx extends Context>(ax: Awaitable<Ctx>) => Awaitable<Ctx & Etx>) {
   return middlewareFn;
 }
 
@@ -234,3 +231,22 @@ export interface URLPatternComponentResult {
   };
 }
 
+class ClosedStream<T> extends TransformStream<T, T> { 
+  constructor(close: ResolvablePromise<void>) { 
+    super({ flush() { close.resolve() } }) 
+  } 
+}
+
+/** @deprecated Do not use */
+export function closedResponse(close: ResolvablePromise<void>, res: Response) {
+  return new Response(res.body != null
+    ? res.body.pipeThrough(new ClosedStream(close)) 
+    : (() => (close.resolve(), null))(), res) // if body is null for some reason, ensure that the promise isn't dangling
+}
+
+/** @deprecated Do not use */
+export function providePromises() {
+  const [handle, close] = [new ResolvablePromise<Response>(), new ResolvablePromise<void>()]
+  const [handled, closed] = [Promise.resolve(handle), Promise.resolve(close)]
+  return [{ handled, closed }, { handle, close }] as const
+}
