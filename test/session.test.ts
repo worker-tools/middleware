@@ -15,7 +15,7 @@ import { unsignedCookies } from '../cookies.ts';
 import { cookieSession, storageSession } from '../session.ts';
 import { StorageArea } from 'https://ghuc.cc/worker-tools/kv-storage/index.ts'
 import 'https://ghuc.cc/worker-tools/deno-kv-storage/adapters/sqlite.ts'
-import { StreamResponse } from '../../stream-response/index.ts'
+import { StreamResponse } from 'https://ghuc.cc/worker-tools/stream-response/index.ts'
 
 import { withMiddleware, combine } from '../context.ts'
 import { ok } from 'https://ghuc.cc/worker-tools/response-creators/index.ts'
