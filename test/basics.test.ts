@@ -10,6 +10,8 @@ import {
 } from 'https://deno.land/std@0.133.0/testing/asserts.ts'
 const { test } = Deno;
 
+import { ok } from 'https://ghuc.cc/worker-tools/response-creators/index.ts'
+
 import { basics } from '../basics.ts';
 
 test('environment', () => {
@@ -29,7 +31,7 @@ const request = new Request('/item/detail?id=3', {
   },
 })
 
-const handled = Promise.resolve();
+const handled = Promise.resolve(ok())
 const waitUntil = () => {}
 
 const withBasics = basics()

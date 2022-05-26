@@ -28,7 +28,7 @@ export interface Context {
   waitUntil: (f: any) => void,
 
   /** https://github.com/w3c/ServiceWorker/issues/1397 */
-  handled: Promise<void>
+  handled: Promise<Response>
 
   /**
    * The URL pattern match that caused this handler to run. See the URL Pattern API for more.
@@ -112,7 +112,7 @@ export type AnyRecord = Record<PropertyKey, unknown>
  * //=> Context & { foo: string } & { bar: string }
  * ```
  * 
- * @param _defaultExt The default extension to the current context. Can also be a function that returns the extension object, which is never called (to avoid unnecessary memory allocation).
+ * @param _defaultExt The default extension to the current context. Can also be a function that returns the extension object, to avoid unnecessary memory allocation.
  * @param middlewareFn A middleware functions: Adds the keys listed in `defaultExt` to the context
  * @returns The provided `middlewareFn` with type annotations inferred based on `defaultExt`
  * @deprecated This feature is unstable. Might remove or rename later.
@@ -133,14 +133,14 @@ export type Middleware<X extends Context, Y extends Context> = (x: Awaitable<X>)
 /** @deprecated Name & behavior might change */
 export function withMiddleware<X extends Context, EX extends ErrorContext>(middleware: Middleware<Context, X>, handler: Handler<X>, fallback?: ErrorHandler<EX>) {
   return async (request: Request, ...args: any[]) => {
-    const handled = new ResolvablePromise<void>()
+    const handled = new ResolvablePromise<Response>()
     const effects = new EffectsList();
     const ctx = { request, effects, handled, args: [request, ...args], waitUntil: () => {} };
     try {
       const usrCtx = await middleware(ctx);
       const userResponse = handler(request, usrCtx);
       const response = await executeEffects(effects, userResponse);
-      handled.resolve(Promise.resolve()) // same as queueMicrotask
+      handled.resolve(response)
       return response;
     } catch (err) {
       throw err

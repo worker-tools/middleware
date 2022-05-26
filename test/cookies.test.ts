@@ -30,7 +30,7 @@ test('exist', () => {
   assertExists(unsignedCookies())
 })
 
-const handled = Promise.resolve()
+const handled = Promise.resolve(ok())
 const waitUntil = () => {}
 
 test('basics', async () => {

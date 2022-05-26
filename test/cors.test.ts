@@ -15,7 +15,7 @@ import { anyCORS, strictCORS, REQUEST_METHOD, REQUEST_HEADERS, ALLOW_ORIGIN, ALL
 import { executeEffects } from '../context.ts'
 import { ok, noContent } from 'https://ghuc.cc/worker-tools/response-creators/index.ts'
 
-const handled = Promise.resolve()
+const handled = Promise.resolve(ok())
 const waitUntil = () => {}
 
 test('environment', () => {
