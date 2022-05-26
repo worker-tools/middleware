@@ -17,6 +17,7 @@ export interface CacheOptions {
 
 /**
  * TODO: Implement request-response
+ * @deprecated Not implemented
  */
 export const caching = (opt: CacheOptions = {}) => async <X extends Context>(ax: Awaitable<X>) => {
   const x = await ax;

@@ -41,16 +41,16 @@ export interface Context {
    */
   event?: FetchEvent, 
 
-  /** Might be present based on environment */
+  /** Might be present based on usage */
   env?: any
 
-  /** Might be present based on environment */
+  /** Might be present based on usage */
   ctx?: any
 
-  /** Might be present based on environment */
+  /** Might be present based on usage */
   connInfo?: any
 
-  /** Might be present based on environment */
+  /** Might be present based on usage */
   args?: any[]
 }
 
@@ -162,8 +162,8 @@ export interface FetchEventInit extends ExtendableEventInit {
 }
 
 /**
- * This is the event type for fetch events dispatched on the service worker global scope. 
- * It contains information about the fetch, including the request and how the receiver will treat the response. 
+ * This is the event type for fetch events dispatched on the service worker global scope. 
+ * It contains information about the fetch, including the request and how the receiver will treat the response. 
  * It provides the event.respondWith() method, which allows us to provide a response to this fetch. 
  */
 export interface FetchEvent extends ExtendableEvent {

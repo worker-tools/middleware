@@ -21,28 +21,26 @@ export async function cookiesFrom(cookieStore: CookieStore): Promise<Cookies> {
  */
 export type Cookies = { readonly [key: string]: string };
 
-interface AnyCookiesContext {
+export interface CookiesContext {
   cookieStore: CookieStore, 
   cookies: Cookies, 
 }
-export interface UnsignedCookiesContext extends AnyCookiesContext { 
+export interface UnsignedCookiesContext extends CookiesContext { 
   unsignedCookieStore: CookieStore, 
   unsignedCookies: Cookies 
 }
-export interface SignedCookiesContext extends AnyCookiesContext { 
+export interface SignedCookiesContext extends CookiesContext { 
   signedCookieStore: CookieStore, 
   signedCookies: Cookies,
-  error?: { kind: 'forbidden' }
 }
-export interface EncryptedCookiesContext extends AnyCookiesContext { 
+export interface EncryptedCookiesContext extends CookiesContext { 
   encryptedCookieStore: CookieStore, 
   encryptedCookies: Cookies,
-  error?: { kind: 'forbidden' }
 }
 
 export interface CookiesOptions extends DeriveOptions {
   keyring?: readonly CryptoKey[];
-};
+}
 
 export const unsignedCookies = () => async <X extends Context>(ax: Awaitable<X>): Promise<X & UnsignedCookiesContext> => {
   const x = await ax;

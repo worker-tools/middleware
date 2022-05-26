@@ -10,12 +10,10 @@ const weightSortFn = <X extends { weight: number }>(a: X, b: X) => a.weight >= b
 const ACCEPT          = 'Accept';
 const ACCEPT_ENCODING = 'Accept-Encoding';
 const ACCEPT_LANGUAGE = 'Accept-Language';
-// const ACCEPT_CHARSET = 'Accept-Charset';
 
 const CONTENT_TYPE     = 'Content-Type';
 const CONTENT_LANGUAGE = 'Content-Language';
 const CONTENT_ENCODING = 'Content-Encoding';
-// const CHARSET = 'charset';
 
 const VARY = 'Vary';
 
