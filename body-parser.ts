@@ -2,16 +2,22 @@
 import type { Awaitable } from "./utils/common-types.ts";
 import { combine, Context } from "./context.ts";
 import { accepts, Accepted } from './content-negotiation.ts'
+import { payloadTooLarge } from 'https://ghuc.cc/worker-tools/response-creators/index.ts'
 
 export const JSON = 'application/json';
 export const FORM = 'application/x-www-form-urlencoded'
 export const FORM_DATA = 'multipart/form-data';
-export const TEXT_HTML  = 'text/html'
-export const TEXT_PLAIN  = 'text/plain'
+export const TEXT_HTML = 'text/html'
+export const TEXT_PLAIN = 'text/plain'
 /** Standard MIME type for binary data */
 export const BINARY = 'application/octet-stream';
 /** Non-standard MIME type for binary data. Sometimes used, so included anyway. */
 export const X_BINARY = 'application/x-binary';
+
+export interface BodyParserOptions<J> {
+  defaultJSON?: J,
+  maxSize?: number
+}
 
 export type BodyParsable =
   | typeof FORM
@@ -47,7 +53,7 @@ export interface BodyVendorJSONContext<J = any> {
 export interface BodyFormContext {
   accepted: typeof FORM,
   body: URLSearchParams,
-  bodyParams: URLSearchParams,
+  form: URLSearchParams,
   // form: { [key: string]: string }
 }
 
@@ -95,27 +101,46 @@ export type BodyContext<J> =
   | BodyVendorJSONContext<J>
 // Not possible to provide a fallback rn: https://github.com/microsoft/TypeScript/issues/48073
 
-const isString = (x: [string, FormDataEntryValue]): x is [string, string] => !(x[1] instanceof File)
-const isFile = (x: [string, FormDataEntryValue]): x is [string, File] => x[1] instanceof File
+const _isString = (x: [string, FormDataEntryValue]): x is [string, string] => !(x[1] instanceof File)
+const _isFile = (x: [string, FormDataEntryValue]): x is [string, File] => x[1] instanceof File
 
 export type BodyParserDeps = Context & Accepted<BodyParsable>
 
-const isBodyTextContext = <J = any>(nx: BodyContext<J>): nx is BodyTextContext => 
+const isBodyTextContext = <J = any>(nx: BodyContext<J>): nx is BodyTextContext =>
   nx.accepted?.startsWith('text/')
 
-const isBodyVendorJSONContext = <J = any>(nx: BodyContext<J>): nx is BodyVendorJSONContext<J> => 
-
+const isBodyVendorJSONContext = <J = any>(nx: BodyContext<J>): nx is BodyVendorJSONContext<J> =>
   nx.accepted?.startsWith('application/') && nx.accepted.endsWith('+json')
+
 // const isBodyVendorBinaryContext = <J = any>(nx: BodyContext<J>): nx is BodyVendorBinaryContext => 
 //   nx.accepted?.startsWith('application/vnd.')
 
-export const parseBody = <J = any>(
-  _defaultObj?: J,
+const MB = 1024**2
+
+async function checkSize(req: Request, maxSize: number) {
+  let size = 0;
+  await req.clone().body!.pipeTo(
+    new WritableStream({
+      write(chunk, ctrl) {
+        size += chunk.byteLength
+        if (size > maxSize) {
+          ctrl.error(new Error('Payload too large'))
+        }
+      }
+    }))
+  return size > maxSize
+}
+
+export const bodyParser = <J = any>(
+  opts: BodyParserOptions<J> = {},
 ) => async <X extends BodyParserDeps>(
   ax: Awaitable<X>
 ): Promise<X & BodyContext<J>> => {
     const x = await ax;
     const nx = x as X & BodyContext<J>;
+
+    const ok = await checkSize(x.request, opts.maxSize ?? 1 * MB)
+    if (!ok) throw payloadTooLarge()
 
     switch (nx.accepted) {
       case JSON: {
@@ -123,13 +148,13 @@ export const parseBody = <J = any>(
         return nx;
       }
       case FORM: {
-        const form = nx.body = nx.bodyParams = new URLSearchParams(await x.request.text())
+        const _form = nx.body = nx.form = new URLSearchParams(await x.request.text())
         // FIXME: Multiple values per key??
         // nx.form = Object.fromEntries(form);
         return nx;
       }
       case FORM_DATA: {
-        const formData = nx.body = nx.formData = await x.request.formData();
+        const _formData = nx.body = nx.formData = await x.request.formData();
         // FIXME: Multiple values per key??
         // const tuples = [...formData];
         // nx.form = Object.fromEntries(tuples.filter(isString));
@@ -163,13 +188,13 @@ export const parseBody = <J = any>(
     }
   }
 
-export const bodyParser = <J = any>(defaultObj?: J) => 
-  combine(accepts(defaultBody), parseBody(defaultObj));
+export const defaultBodyParser = <J = any>(options?: BodyParserOptions<J>) =>
+  combine(accepts(defaultBody), bodyParser(options));
 
 // type ErrorOf<T> = T extends { error?: infer E } ? E : never
 
 // (async () => {
-//   const ctx: Context = { request: new Request('/'), effects: [] }
+//   const ctx: Context = { request: new Request('/'), effects: [], waitUntil: (_f: any) => {}, handled: Promise.resolve(null as any) }
 //   const z = provides([])(accepts([])(ctx))
 
 
