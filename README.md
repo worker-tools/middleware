@@ -157,8 +157,7 @@ export default withMiddleware(
 --------
 
 <p align="center"><a href="https://workers.tools"><img src="https://workers.tools/assets/img/logo.svg" width="100" height="100" /></a>
-<p align="center">This module is part of the Worker Tools collection
-<p align="center">⁕
+<p align="center">This module is part of the Worker Tools collection<br/>⁕
 
 [Worker Tools](https://workers.tools) are a collection of TypeScript libraries for writing web servers in [Worker Runtimes](https://workers.js.org) such as Cloudflare Workers, Deno Deploy and Service Workers in the browser. 
 
