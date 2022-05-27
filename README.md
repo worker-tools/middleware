@@ -2,23 +2,16 @@
 
 A suite of standalone HTTP server middlewares for Worker Runtimes.
 
-***
-
-__Work In Progress__
-
-***
-
 It is meant to be used with [Worker Router](../router), but can also be used with simple request handlers.
 
 
-## What's Included?
-### Cookies
+## Cookies
 Supports singed, unsigned and encrypted cookies. 
 
 Signed and encrypted cookies use the Web Cryptography API internally to en/decrypt sign and verify cookies. 
 
 ```js
-router.get('/', withSignedCookies({ secret: 'password123' }), (request, { cookies, cookieStore }) => {
+router.get('/', signedCookies({ secret: 'password123' }), (request, { cookies, cookieStore }) => {
   cookieStore.set('foo', 'bar') // no await necessary
   return ok(cookie.foo === 'bar' ? 'Welcome back!' : 'Welcome!')
 })
@@ -29,19 +22,16 @@ For better DX, the middleware also provides a read-optimized `cookies` property,
 
 Modifying cookies is done via the cookie store. While the cookie store API is async, there is no need to await every result, as the cookie store keeps track of all operations and awaits them internally before sending the headers.
 
-### Session
-There are two session middlewares. The cookie session encodes the entire session object into a cookie and is meant for prototyping and small use cases. 
-The storage session uses a KV Storage API-compatible storage object to persist the session object between requests. Worker Tools provides storage adapters for Cloudflare's KV storage and SQLite/Postgres for Deno.
+## Session
+Session middleware provides a plain JavaScript object that is serialized/deserialized via the Structured Clone Algorithm, i.e. it behaves largely the same as storing an object in IndexedDB. In other words, it can have Maps, Sets, and ArrayBuffers, etc.
 
-The session is a plain JavaScript object that is serialized/deserialized via the Structured Clone Algorithm, i.e. it behaves largely the same as storing an object in IndexedDB. In other words, you can add Maps, Sets, and ArrayBuffers to it. 
+### `cookieSession`
+The cookie session encodes the entire session object into a cookie and is meant for prototyping and small use cases. 
 
 ```js
 router.get('/', combine(
-  signedCookies({ 
-    secret: 'password123'
-  }),
+  signedCookies({ secret: 'password123' }),
   cookieSession({ 
-    // Type is inferred from default session.
     defaultSession: { id: '', iv: new Uint8Array([]) }
   }) 
 ), (request, { session }) => {
@@ -53,70 +43,106 @@ router.get('/', combine(
 })
 ```
 
-The session object is persisted at the end of the request.  
-
-### Body Parser
-Because Worker Runtimes already provide helpers like `.json()` and `.formData()` in the Request type, the need for a body parser is less pronounced. The value of Middleware's body parser mainly comes from content negotiation:
+### `storageSession`
+The storage session uses a KV Storage API-compatible storage object to persist the session object between requests. 
+Worker Tools has [storage adapters](https://workers.tools/kv-storage) for Cloudflare's KV storage and SQLite/Postgres for Deno.
 
 ```js
-router.any('/form', bodyParser(), (request, { accepted, ...ctx }) => {
-  switch (accepted) {
-    case 'application/x-www-form-urlencoded': {
-      ctx.form // instanceof URLSearchParams
-      ctx.formParams // { [name: string]: string } 
-      return ok()
-    }
-    case 'multipart/form-data': {
-      ctx.formData // instanceof FormData
-      ctx.formParams // { [name: string]: string } 
-      ctx.files // { [name: string]: File }
-      return ok()
-    }
-    case 'application/octet-stream':
-    case 'application/binary': { // commonly used non-standard mime type
-      ctx.blob // instanceof Blob
-      ctx.buffer // instanceof ArrayBuffer
-      return ok()
-    }
-    default: {
-      // application/json, text/html, text/plain
-      return ok()
-    }
+router.get('/', combine(
+  signedCookies({ secret: 'password123' }), 
+  storageSession({ 
+    storage: new StorageArea('sessions'),
+    defaultSession: { id: '', iv: new Uint8Array([]) },
+  }) 
+), (request, { session }) => {
+  if (!session.id) {
+    session.id = crypto.randomUUID();
+    session.iv = crypto.getRandomValues(new Uint8Array(32))
   }
-
   return ok()
 })
 ```
 
-You can also limit what is acceptable to the endpoint by combining the content negotiation middleware (see below) and `bodyParserStandalone`.
+Both `cookieSession` and `storageSession` must be combined with a cookie middleware.
 
-### Content Negotiation
-Provides generic content negotiation for HTTP endpoints.   
+The session object is persisted once at the end of the request.
 
-Another use case is to combine with the body parser to limit what the body parser accepts:
+## Body Parser
+Because Worker Runtimes already provide helpers like `.json()` and `.formData()` in the Request type, the need for a body parser is less pronounced. The value of Middleware's body parser mainly comes from content negotiation and rejecting large payloads:
+
+### `defaultBodyParser`
+
+```js
+router.any('/form', 
+  defaultBodyParser({ maxSize: 1024**2 }), // 1MB 
+  (req, { accepted, ...ctx }) => {
+    switch (accepted) {
+      case 'application/x-www-form-urlencoded': {
+        ctx.form // instanceof URLSearchParams
+        return ok()
+      }
+      case 'multipart/form-data': {
+        ctx.formData // instanceof FormData
+        return ok()
+      }
+      case 'application/json': {
+        ctx.json
+        return ok()
+      }
+      case 'application/octet-stream':
+      case 'application/x-binary': { // commonly used non-standard mime type
+        ctx.blob // instanceof Blob
+        ctx.buffer // instanceof ArrayBuffer
+        return ok()
+      }
+      default: {
+        return ok()
+      }
+    }
+
+    return ok()
+  })
+```
+
+### `bodyParser`
+You can also limit what is acceptable to the endpoint by combining the [content negotiation middleware](#content-negotiation) and `bodyParser`:
 
 ```js
 router.any('/form', combine(
-  accepts({ accepts: ['application/x-www-form-urlencoded', 'multipart/form-data'] }),
-  bodyParserExCn()
-), (request, { accepted, ...ctx }) => {
-  // Accepted property are now limited to forms.
-  // Endpoint will not accept other types
-}
+  accepts(['application/x-www-form-urlencoded', 'multipart/form-data']), 
+  bodyParser()
+), (request, { accepted, body }) => {
+  switch (accepted) {
+    case 'application/x-www-form-urlencoded': {
+      body // instanceof URLSearchParams
+      return ok()
+    }
+    case 'multipart/form-data': {
+      body // instanceof FormData
+      return ok()
+    }
+  }
+})
 ```
 
 NOTE: It's currently only possible to limit what the body parser accepts.
 
-The `contentTypes` middleware lets you specify what content types the endpoint *can* provide. For example, we can build a mini deno.land that either serves raw JavaScript or a HTML page documenting the function:
+## Content Negotiation
+Provides generic content negotiation for HTTP endpoints.   
+
+
+### `contentTypes`
+The `contentTypes` middleware lets you specify what content types the endpoint can *provide*. 
+For example, we can build a mini deno.land that either serves raw JavaScript or a HTML page depending on accepts header:
 
 ```js
 router.get('/form', combine(
-  contentTypes({ types: ['text/html', 'application/javascript'] })
+  contentTypes(['text/html', 'text/javascript'])
 ), (request, { type }) => {
   // `type` is either 'text/html' or 'application/json',
   // depending on the client's `Accept` header (best match)
   switch (type) {
-    case 'application/javascript': 
+    case 'text/javascript': 
       return ok('function foo() {}', { 
         headers: { 'content-type': type } 
       })
@@ -128,11 +154,10 @@ router.get('/form', combine(
 }
 ```
 
-### Caching
+## Basics
+TBD
 
-### Basics
-
-## Use with Netlify Functions
+<!-- ## Use with Netlify Functions
 ```ts
 import { Context } from "netlify:edge"
 import { 
@@ -152,9 +177,13 @@ export default withMiddleware(
     return await context.next()
   }
 )
-```
+``` -->
+
+<br/>
 
 --------
+
+<br/>
 
 <p align="center"><a href="https://workers.tools"><img src="https://workers.tools/assets/img/logo.svg" width="100" height="100" /></a>
 <p align="center">This module is part of the Worker Tools collection<br/>⁕
