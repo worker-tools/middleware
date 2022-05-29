@@ -128,7 +128,7 @@ async function checkSize(req: Request, maxSize: number) {
         }
       }
     }))
-  return size > maxSize
+  return size <= maxSize
 }
 
 export const bodyParser = <J = any>(

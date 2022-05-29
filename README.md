@@ -136,20 +136,16 @@ The `contentTypes` middleware lets you specify what content types the endpoint c
 For example, we can build a mini deno.land that either serves raw JavaScript or a HTML page depending on accepts header:
 
 ```js
-router.get('/form', combine(
+router.get('/add.js', combine(
   contentTypes(['text/html', 'text/javascript'])
 ), (request, { type }) => {
-  // `type` is either 'text/html' or 'application/json',
-  // depending on the client's `Accept` header (best match)
+  // `type` is either 'text/html' or 'text/javascript',
+  // depending on the client's `Accepts` header (best match)
   switch (type) {
     case 'text/javascript': 
-      return ok('function foo() {}', { 
-        headers: { 'content-type': type } 
-      })
+      return ok('export function add(a, b) { return a + b }')
     case 'text/html': 
-      return ok('HTML documentation for JS', {
-        headers: { 'content-type': type } 
-      })
+      return ok('<html>Documentation for <code>add</code>.</html>')
   }
 }
 ```
