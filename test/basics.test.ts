@@ -58,10 +58,9 @@ test('basics/pathname', async () => {
 })
 
 test('basics/search', async () => {
-  const { searchParams, query } = await withBasics({ request, effects: [], handled, waitUntil });
+  const { searchParams } = await withBasics({ request, effects: [], handled, waitUntil });
   assert(searchParams instanceof URLSearchParams)
   assertEquals(searchParams.get('id'), '3')
-  assertEquals(query.id, '3')
 })
 
 test('basics/userAgent', async () => {
