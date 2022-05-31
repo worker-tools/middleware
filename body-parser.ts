@@ -28,7 +28,7 @@ export type BodyParsable =
   | `application/${string}+json`
   | `text/${string}`
 
-export const defaultBody: BodyParsable[] = [
+const defaultBody: BodyParsable[] = [
   FORM,
   FORM_DATA,
   JSON,

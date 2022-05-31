@@ -42,7 +42,7 @@ export interface CookiesOptions extends DeriveOptions {
   keyring?: readonly CryptoKey[];
 }
 
-export const unsignedCookies = () => async <X extends Context>(ax: Awaitable<X>): Promise<X & UnsignedCookiesContext> => {
+export const plainCookies = () => async <X extends Context>(ax: Awaitable<X>): Promise<X & UnsignedCookiesContext> => {
   const x = await ax;
   const cookieStore = new RequestCookieStore(x.request);
   const requestDuration = new ResolvablePromise<void>();
@@ -67,6 +67,8 @@ export const unsignedCookies = () => async <X extends Context>(ax: Awaitable<X>)
   })
   return nx;
 }
+
+export { plainCookies as unsignedCookies }
 
 export const signedCookies = (opts: CookiesOptions) => {
   // TODO: options to provide own cryptokey??

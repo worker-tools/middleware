@@ -149,7 +149,6 @@ function getCookieSessionProxy<S extends Rec = Rec>(
   const obj = cookieVal ? parseSessionCookie<S>(cookieVal) : defaultSession ?? <S>{};
   const draft = createDraft(obj)
   return [draft, obj]
-
 }
 
 async function getStorageSessionProxy<S extends Rec = Rec>(

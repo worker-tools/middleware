@@ -11,7 +11,6 @@ export interface BasicsContext {
   searchParams: URLSearchParams,
   userAgent: string,
   params: { [key: string]: string | undefined }
-  query: { [key: string]: string | undefined }
   ip?: string
 }
 
@@ -30,6 +29,5 @@ export const basics = () => async <X extends Context>(ax: Awaitable<X>): Promise
   const userAgent = headers.get('user-agent') ?? '';
   const ip = headers.get('x-forwarded-for') ?? x.connInfo?.remoteAddr?.hostname ?? '';
   const params = match?.pathname.groups ?? {};
-  const query = Object.fromEntries(searchParams) // FIXME: multiple values per key??
-  return Object.assign(x, { headers, method, url, pathname, searchParams, userAgent, ip, params, query })
+  return Object.assign(x, { headers, method, url, pathname, searchParams, userAgent, ip, params })
 }
