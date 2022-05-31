@@ -161,18 +161,18 @@ test('streams', async () => {
   assert(res.headers.get('set-cookie') == null)
 })
 
-test('streams II', async () => {
-  const fn = withMiddleware(combine(
-    unsignedCookies(),
-    storageSession({ storage, defaultSession: { foo: '' } })
-  ), (_, { session }) => {
-    return new StreamResponse(async function* () {
-      yield 'hello'
-      await timeout(10)
-      session.foo = '300'
-      yield ' world'
-    }())
-  })
-  const res = await fn(new Request('/'))
-  assertEquals(await res.text(), 'hello world')
-})
+// test('streams II', async () => {
+//   const fn = withMiddleware(combine(
+//     unsignedCookies(),
+//     storageSession({ storage, defaultSession: { foo: '' } })
+//   ), (_, { session }) => {
+//     return new StreamResponse(async function* () {
+//       yield 'hello'
+//       await timeout(10)
+//       session.foo = '300'
+//       yield ' world'
+//     }())
+//   })
+//   const res = await fn(new Request('/'))
+//   assertEquals(await res.text(), 'hello world')
+// })

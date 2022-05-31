@@ -33,13 +33,6 @@ export interface Context {
    */
   handled: Promise<Response>
 
-  /** 
-   * A promise that resolves when the entire response body has been written to the wire, 
-   * or if the stream has been closed for any other reason.
-   * Most likely useful when combined with streaming responses.
-   */
-  closed?: Promise<void>
-
   /**
    * The URL pattern match that caused this handler to run. See the URL Pattern API for more.
    */
@@ -142,14 +135,15 @@ export type Middleware<X extends Context, Y extends Context> = (x: Awaitable<X>)
  */
 export function withMiddleware<X extends Context, EX extends ErrorContext>(middleware: Middleware<Context, X>, handler: Handler<X>, _errorHandler?: ErrorHandler<EX>) {
   return async (request: Request, ...args: any[]) => {
-    const [ps, rs] = providePromises()
+    const handle = new ResolvablePromise<Response>()
+    const handled = Promise.resolve(handle);
     const effects = new EffectsList();
-    const ctx = { request, effects, ...ps, args: [request, ...args], waitUntil: () => {} };
+    const ctx = { request, effects, handled, args: [request, ...args], waitUntil: () => {} };
     try {
       const userCtx = await middleware(ctx);
-      const userRes = handler(request, userCtx)
-      const response = closedResponse(rs.close, await executeEffects(effects, userRes))
-      rs.handle.resolve(response)
+      const userRes = await handler(request, userCtx)
+      const response = await executeEffects(effects, userRes)
+      handle.resolve(response)
       return response;
     } catch (err) {
       throw err
@@ -229,24 +223,4 @@ export interface URLPatternComponentResult {
   groups: {
       [key: string]: string | undefined;
   };
-}
-
-class ClosedStream<T> extends TransformStream<T, T> { 
-  constructor(close: ResolvablePromise<void>) { 
-    super({ flush() { close.resolve() } }) 
-  } 
-}
-
-/** @deprecated Do not use */
-export function closedResponse(close: ResolvablePromise<void>, res: Response) {
-  return new Response(res.body != null
-    ? res.body.pipeThrough(new ClosedStream(close)) 
-    : (() => (close.resolve(), null))(), res) // if body is null for some reason, ensure that the promise isn't dangling
-}
-
-/** @deprecated Do not use */
-export function providePromises() {
-  const [handle, close] = [new ResolvablePromise<Response>(), new ResolvablePromise<void>()]
-  const [handled, closed] = [Promise.resolve(handle), Promise.resolve(close)]
-  return [{ handled, closed }, { handle, close }] as const
 }

@@ -111,7 +111,7 @@ export function storageSession<S extends Rec = Rec>(
       const newContext = Object.assign(ctx, { session, storageSession: session })
 
       ctx.waitUntil((async () => {
-        await ctx.closed;
+        await ctx.handled; // FIXME: wait for stream to close
         const next: S = finishDraft(session)
         if (next !== orig) {
           await storage.set(sid, next, { expirationTtl });
