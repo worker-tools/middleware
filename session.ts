@@ -3,15 +3,15 @@ import type { StorageArea } from 'https://ghuc.cc/qwtel/kv-storage-interface/ind
 import { WebUUID } from 'https://ghuc.cc/qwtel/web-uuid/index.ts';
 import { Base64Decoder, Base64Encoder } from 'https://ghuc.cc/qwtel/base64-encoding/index.ts';
 
-import { createDraft, finishDraft, Draft, enableMapSet } from 'https://cdn.skypack.dev/immer@9.0.14?dts';
+import { createDraft, finishDraft, enableMapSet } from 'https://cdn.skypack.dev/immer@9.0.14?dts';
 import { Encoder as BinaryEncoder, Decoder as BinaryDecoder } from 'https://cdn.skypack.dev/msgpackr@1.5.5?dts';
 
 import type { Context } from './context.ts';
 import type { Awaitable } from './utils/common-types.ts';
 import type { UnsignedCookiesContext, SignedCookiesContext, EncryptedCookiesContext } from './cookies.ts';
+import type { FlushedContext } from './flushed.ts';
 
 enableMapSet();
-// enablePatches();
 
 type Rec = Record<PropertyKey, any>;
 type CookieContext = Context & (EncryptedCookiesContext | SignedCookiesContext | UnsignedCookiesContext);
@@ -42,6 +42,12 @@ export interface StorageSessionOptions<S extends Rec = Rec> extends CookieSessio
   storage: StorageArea,
 }
 
+const stringifySessionCookie = <T>(value: T) => 
+  new Base64Encoder({ url: true }).encode(new BinaryEncoder({ structuredClone: true }).encode(value));
+
+const parseSessionCookie = <T>(value: string) => 
+  <T>new BinaryDecoder({ structuredClone: true }).decode(new Base64Decoder().decode(value));
+
 /**
  * Cookie session middleware for worker runtimes. 
  * 
@@ -58,17 +64,15 @@ export function cookieSession<S extends Rec = Rec>(
     const { cookieStore, cookies } = ctx;
     const { defaultSession, cookieName = 'obj', expirationTtl = 5 * 60 } = options
 
-    const [session, orig] = getCookieSessionProxy<S>(cookies[cookieName], {
-      cookieName,
-      expirationTtl,
-      defaultSession,
-    });
+    const cookieVal = cookies[cookieName]
+    const original = cookieVal ? parseSessionCookie<S>(cookieVal) : defaultSession ?? <S>{};
+    const session = createDraft(original)
 
     const newContext =  Object.assign(ctx, { session, cookieSession: session })
 
-    ctx.effects.push(response => {
+    ctx.effects.push(() => {
       const next: S = finishDraft(session)
-      if (next !== orig) {
+      if (next !== original) {
         cookieStore.set({
           name: cookieName,
           value: stringifySessionCookie(next),
@@ -77,8 +81,6 @@ export function cookieSession<S extends Rec = Rec>(
           httpOnly: true,
         });
       }
-
-      return response;
     })
 
     return newContext;
@@ -95,31 +97,30 @@ export function cookieSession<S extends Rec = Rec>(
 // FIXME: Will "block" until session object is retrieved from KV => provide "unyielding" version that returns a promise?
 export function storageSession<S extends Rec = Rec>(
   options: StorageSessionOptions<S>
-): <X extends CookieContext>(ax: Awaitable<X>) => Promise<X & StorageSessionContext<S>> {
+): <X extends CookieContext & Partial<FlushedContext>>(ax: Awaitable<X>) => Promise<X & StorageSessionContext<S>> {
     return async ax => {
       const ctx = await ax;
       const { cookies, cookieStore } = ctx;
       const { storage, defaultSession, cookieName = 'sid', expirationTtl = 5 * 60 } = options
 
-      const [sid, session, orig] = await getStorageSessionProxy<S>(cookies[cookieName], {
-        storage,
-        cookieName,
-        expirationTtl,
-        defaultSession,
-      });
+      const cookieVal = cookies[cookieName]
+      const sid = cookieVal ? new WebUUID(cookieVal) : WebUUID.v4()
+      const original = (await storage.get<S>(sid)) ?? defaultSession ?? <S>{};
+      const session = createDraft(original)
 
       const newContext = Object.assign(ctx, { session, storageSession: session })
 
       ctx.waitUntil((async () => {
-        await ctx.handled; // FIXME: wait for stream to close
+        await ctx.handled;
+        await ctx.flushed;
         const next: S = finishDraft(session)
-        if (next !== orig) {
+        if (next !== original) {
           await storage.set(sid, next, { expirationTtl });
         }
       })())
 
-      ctx.effects.push(response => {
-        if (!cookies[cookieName]) {
+      if (!cookieVal) {
+        ctx.effects.push(() => {
           cookieStore.set({
             name: cookieName,
             value: sid.id,
@@ -127,36 +128,9 @@ export function storageSession<S extends Rec = Rec>(
             sameSite: 'lax',
             httpOnly: true,
           });
-        }
-
-        return response;
-      })
+        });
+      }
 
       return newContext;
     };
   }
-
-const stringifySessionCookie = <T>(value: T) => 
-  new Base64Encoder({ url: true }).encode(new BinaryEncoder({ structuredClone: true }).encode(value));
-
-const parseSessionCookie = <T>(value: string) => 
-  <T>new BinaryDecoder({ structuredClone: true }).decode(new Base64Decoder().decode(value));
-
-function getCookieSessionProxy<S extends Rec = Rec>(
-  cookieVal: string | null | undefined,
-  { defaultSession }: CookieSessionOptions<S>,
-): [Draft<S>, S] {
-  const obj = cookieVal ? parseSessionCookie<S>(cookieVal) : defaultSession ?? <S>{};
-  const draft = createDraft(obj)
-  return [draft, obj]
-}
-
-async function getStorageSessionProxy<S extends Rec = Rec>(
-  cookieVal: string | null | undefined,
-  { defaultSession, storage }: StorageSessionOptions<S>,
-): Promise<[WebUUID, Draft<S>, S]> {
-  const sessionId = cookieVal ? new WebUUID(cookieVal) : WebUUID.v4()
-  const obj = (await storage.get<S>(sessionId)) ?? defaultSession ?? <S>{};
-  const draft = createDraft(obj)
-  return [sessionId, draft, obj];
-}

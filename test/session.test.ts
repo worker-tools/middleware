@@ -13,6 +13,7 @@ const { test } = Deno;
 
 import { unsignedCookies } from '../cookies.ts';
 import { cookieSession, storageSession } from '../session.ts';
+import { flushed } from '../flushed.ts';
 import { StorageArea } from 'https://ghuc.cc/worker-tools/deno-kv-storage/mod.ts'
 import 'https://ghuc.cc/worker-tools/deno-kv-storage/adapters/sqlite.ts'
 import { StreamResponse } from 'https://ghuc.cc/worker-tools/stream-response/index.ts'
@@ -161,18 +162,19 @@ test('streams', async () => {
   assert(res.headers.get('set-cookie') == null)
 })
 
-// test('streams II', async () => {
-//   const fn = withMiddleware(combine(
-//     unsignedCookies(),
-//     storageSession({ storage, defaultSession: { foo: '' } })
-//   ), (_, { session }) => {
-//     return new StreamResponse(async function* () {
-//       yield 'hello'
-//       await timeout(10)
-//       session.foo = '300'
-//       yield ' world'
-//     }())
-//   })
-//   const res = await fn(new Request('/'))
-//   assertEquals(await res.text(), 'hello world')
-// })
+test('streams II', async () => {
+  const fn = withMiddleware(combine(
+    flushed(),
+    unsignedCookies(),
+    storageSession({ storage, defaultSession: { foo: '' } })
+  ), (_, { session }) => {
+    return new StreamResponse(async function* () {
+      yield 'hello'
+      await timeout(10)
+      session.foo = '300'
+      yield ' world'
+    }())
+  })
+  const res = await fn(new Request('/'))
+  assertEquals(await res.text(), 'hello world')
+})
