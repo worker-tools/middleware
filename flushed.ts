@@ -22,12 +22,13 @@ export const flushed = () => async <X extends Context>(ax: Awaitable<X>): Promis
   const x = await ax;
   const flush = new ResolvablePromise<Response>()
   const flushed = Promise.resolve(flush)
-  x.effects.push((res) => {
+  x.effects.push(res => {
     const ref: { res?: Response } = {}
     const cb = () => flush.resolve(ref.res!)
-    ref.res = new Response(res.body != null
-      ? res.body.pipeThrough(new FlushCallbackStream(cb)) 
-      : (x.handled.then(cb), null), res) 
+    const { status, statusText, headers, body } = res;
+    ref.res = new Response(body != null
+      ? body.pipeThrough(new FlushCallbackStream(cb)) 
+      : (x.handled.then(cb), null), { status, statusText, headers }) 
     return ref.res;
   })
   return Object.assign(x, { flushed })

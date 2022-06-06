@@ -57,10 +57,12 @@ export const plainCookies = () => async <X extends Context>(ax: Awaitable<X>): P
   x.effects.push(response => {
     requestDuration.resolve();
     response.headers.append('VARY', 'Cookie')
-    return new Response(response.body, {
-      ...response,
+    const { status, statusText, headers, body } = response
+    return new Response(body, {
+      status,
+      statusText,
       headers: [
-        ...headersSetCookieFix(response.headers),
+        ...headersSetCookieFix(headers),
         ...cookieStore.headers,
       ],
     });
@@ -107,10 +109,12 @@ export const signedCookies = (opts: CookiesOptions) => {
 
       response.headers.append('VARY', 'Cookie')
 
-      return new Response(response.body, {
-        ...response,
+      const { status, statusText, headers, body } = response
+      return new Response(body, {
+        status,
+        statusText,
         headers: [
-          ...headersSetCookieFix(response.headers),
+          ...headersSetCookieFix(headers),
           ...cookieStore.headers,
         ],
       })
@@ -157,10 +161,12 @@ export const encryptedCookies = (opts: CookiesOptions) => {
 
       response.headers.append('VARY', 'Cookie')
 
-      return new Response(response.body, {
-        ...response,
+      const { status, statusText, headers, body } = response
+      return new Response(body, {
+        status,
+        statusText,
         headers: [
-          ...headersSetCookieFix(response.headers),
+          ...headersSetCookieFix(headers),
           ...cookieStore.headers,
         ],
       })
