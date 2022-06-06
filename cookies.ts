@@ -56,14 +56,15 @@ export const plainCookies = () => async <X extends Context>(ax: Awaitable<X>): P
   })
   x.effects.push(response => {
     requestDuration.resolve();
-    response.headers.append('VARY', 'Cookie')
+    const { headers: cookieHeaders } = cookieStore
+    if (cookieHeaders.length) response.headers.append('VARY', 'Cookie')
     const { status, statusText, headers, body } = response
     return new Response(body, {
       status,
       statusText,
       headers: [
         ...headersSetCookieFix(headers),
-        ...cookieStore.headers,
+        ...cookieHeaders,
       ],
     });
   })
@@ -107,7 +108,8 @@ export const signedCookies = (opts: CookiesOptions) => {
       requestDuration.resolve();
       await unsettle(signedCookieStore.allSettledPromise);
 
-      response.headers.append('VARY', 'Cookie')
+      const { headers: cookieHeaders } = cookieStore
+      if (cookieHeaders.length) response.headers.append('VARY', 'Cookie')
 
       const { status, statusText, headers, body } = response
       return new Response(body, {
@@ -115,7 +117,7 @@ export const signedCookies = (opts: CookiesOptions) => {
         statusText,
         headers: [
           ...headersSetCookieFix(headers),
-          ...cookieStore.headers,
+          ...cookieHeaders,
         ],
       })
     })
@@ -159,7 +161,8 @@ export const encryptedCookies = (opts: CookiesOptions) => {
       requestDuration.resolve();
       await unsettle(encryptedCookieStore.allSettledPromise);
 
-      response.headers.append('VARY', 'Cookie')
+      const { headers: cookieHeaders } = cookieStore
+      if (cookieHeaders.length) response.headers.append('VARY', 'Cookie')
 
       const { status, statusText, headers, body } = response
       return new Response(body, {
@@ -167,7 +170,7 @@ export const encryptedCookies = (opts: CookiesOptions) => {
         statusText,
         headers: [
           ...headersSetCookieFix(headers),
-          ...cookieStore.headers,
+          ...cookieHeaders,
         ],
       })
     })
