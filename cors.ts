@@ -1,3 +1,6 @@
+// deno-lint-ignore-file no-explicit-any
+import type { Temporal } from 'https://cdn.skypack.dev/temporal-spec@0.0.2?dts';
+import type { SetRequired } from 'https://cdn.skypack.dev/type-fest@2.15.1?dts';
 import type { Awaitable } from "./utils/common-types.ts";
 import type { Context } from "./index.ts";
 
@@ -17,7 +20,14 @@ export interface CORSOptions {
   methods?: Method[],
   headers?: string[],
   credentials?: boolean;
+  maxAge?: number | Temporal.Duration;
 }
+
+export type StrictCORSOptions = SetRequired<CORSOptions, 'origin' | 'methods' | 'headers'>;
+
+const SECOND = { unit: 'second', relativeTo: '1970-01-01' } as Temporal.DurationTotalOf;
+const isDuration = (x?: unknown): x is Temporal.Duration => (<any>x)?.[Symbol.toStringTag] === 'Temporal.Duration'
+const toMaxAge = (x: number | Temporal.Duration) => (isDuration(x) ? x.total(SECOND) : x).toString()
 
 /**
  * A CORS middleware that gives clients exactly the permissions they ask for, unless constrained by the definitions in `options`.
@@ -29,13 +39,13 @@ export interface CORSOptions {
  * router.post('/your/path', anyCORS(), (req, {}) => ok())
  * ```
  */
-export const anyCORS = (options: CORSOptions = {}) => async <X extends Context>(ax: Awaitable<X>): Promise<X> => {
+export const cors = (options: CORSOptions = {}) => async <X extends Context>(ax: Awaitable<X>): Promise<X> => {
   const x = await ax;
   const req = x.request;
 
   x.effects.push(res => {
-    const optOrigin = typeof options.origin === 'string' 
-      ? new URL(options.origin) 
+    const optOrigin = typeof options.origin === 'string'
+      ? new URL(options.origin)
       : options.origin;
 
     res.headers.set(ALLOW_ORIGIN, optOrigin?.origin ?? req.headers.get(ORIGIN) ?? '*');
@@ -50,8 +60,11 @@ export const anyCORS = (options: CORSOptions = {}) => async <X extends Context>(
       res.headers.append(ALLOW_HEADERS, h);
     }
 
-    if (options.credentials) 
+    if (options.credentials)
       res.headers.set(ALLOW_CREDENTIALS, 'true');
+
+    if (options.maxAge)
+      res.headers.set('Access-Control-Max-Age', toMaxAge(options.maxAge))
 
     if (!options.origin) res.headers.append(VARY, ORIGIN)
     if (!options.methods) res.headers.append(VARY, REQUEST_METHOD)
@@ -63,6 +76,8 @@ export const anyCORS = (options: CORSOptions = {}) => async <X extends Context>(
   return x;
 }
 
+export { cors as anyCORS }
+
 /**
  * A CORS middleware that only grants the permissions defined via `options`.
  * 
@@ -73,13 +88,13 @@ export const anyCORS = (options: CORSOptions = {}) => async <X extends Context>(
  * router.post('/your/path', strictCORS({ ... }), (req, {}) => ok())
  * ```
  */
-export const strictCORS = (options: Required<CORSOptions>) => async <X extends Context>(ax: Awaitable<X>): Promise<X> => {
+export const strictCORS = (options: StrictCORSOptions) => async <X extends Context>(ax: Awaitable<X>): Promise<X> => {
   const x = await ax;
   const req = x.request;
 
   x.effects.push(res => {
-    const optOrigin = typeof options.origin === 'string' 
-      ? new URL(options.origin) 
+    const optOrigin = typeof options.origin === 'string'
+      ? new URL(options.origin)
       : options.origin;
 
     res.headers.set(ALLOW_ORIGIN, optOrigin.origin);
@@ -97,8 +112,11 @@ export const strictCORS = (options: Required<CORSOptions>) => async <X extends C
       }
     }
 
-    if (options.credentials) 
+    if (options.credentials)
       res.headers.set(ALLOW_CREDENTIALS, 'true');
+
+    if (options.maxAge)
+      res.headers.set('Access-Control-Max-Age', toMaxAge(options.maxAge))
 
     return res;
   })

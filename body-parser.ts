@@ -148,13 +148,13 @@ export const bodyParser = <J = any>(
         return nx;
       }
       case FORM: {
-        const _form = nx.body = nx.form = new URLSearchParams(await x.request.text())
+        nx.body = nx.form = new URLSearchParams(await x.request.text())
         // FIXME: Multiple values per key??
         // nx.form = Object.fromEntries(form);
         return nx;
       }
       case FORM_DATA: {
-        const _formData = nx.body = nx.formData = await x.request.formData();
+        nx.body = nx.formData = await x.request.formData();
         // FIXME: Multiple values per key??
         // const tuples = [...formData];
         // nx.form = Object.fromEntries(tuples.filter(isString));
