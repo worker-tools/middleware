@@ -65,11 +65,16 @@ test('deleting cookies', async () => {
   cookieStore.delete('foo')
   const setCookie = (await executeEffects(effects, ok())).headers.get('set-cookie')!
   assertStringIncludes(setCookie, 'foo=;')
-  assertStringIncludes(setCookie, 'Expires=Thu, 01 Jan 1970 00:00:00 GMT;')
+  assertStringIncludes(setCookie, 'Expires=Thu, 01 Jan 1970 00:00:00 GMT')
 })
 
 test('setting cookies 2', async () => {
-  const { cookieStore, effects } = await unsignedCookies()({ request, effects: [], handled, waitUntil })
+  const { cookieStore, effects } = await unsignedCookies()({ 
+    request: new Request('https://example.com'), 
+    effects: [], 
+    handled, 
+    waitUntil,
+  })
   const now = Date.now()
   cookieStore.set({
     name: 'foo',

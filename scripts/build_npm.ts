@@ -78,6 +78,14 @@ await build({
       name: "immer",
       version: "^9.0.14",
     },
+    "https://cdn.skypack.dev/temporal-spec@0.0.2?dts": {
+      name: "temporal-spec",
+      version: "^0.0.2"
+    },
+    "https://cdn.skypack.dev/type-fest@2.15.1?dts": {
+      name: "type-fest",
+      version: "^2.15.1"
+    },
     "https://ghuc.cc/worker-tools/request-cookie-store/index.ts": {
       name: "@worker-tools/request-cookie-store",
       version: "latest"
@@ -101,14 +109,6 @@ await build({
     "https://ghuc.cc/worker-tools/response-creators/index.ts": {
       name: "@worker-tools/response-creators",
       version: "latest"
-    },
-    "https://cdn.skypack.dev/temporal-spec@0.0.2?dts": {
-      name: "temporal-spec",
-      version: "^0.0.2"
-    },
-    "https://cdn.skypack.dev/type-fest@2.15.1?dts": {
-      name: "type-fest",
-      version: "^2.15.1"
     },
   },
 });
