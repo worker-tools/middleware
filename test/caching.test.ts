@@ -12,7 +12,7 @@ import {
 // import { spy, assertSpyCall, assertSpyCalls } from "https://deno.land/std@0.133.0/testing/mock.ts";
 const { test } = Deno;
 
-import { Temporal } from 'https://cdn.skypack.dev/temporal-polyfill@0.0.7?dts';
+import { Temporal } from 'https://cdn.skypack.dev/@js-temporal/polyfill?dts';
 import { caching } from '../caching.ts';
 
 import { withMiddleware, combine } from '../context.ts'
