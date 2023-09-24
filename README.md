@@ -6,7 +6,7 @@ It is meant to be used with [Worker Router](../router), but can also be used wit
 
 
 ## Cookies
-Supports singed, unsigned and encrypted cookies. 
+Supports signed, unsigned and encrypted cookies. 
 
 Signed and encrypted cookies use the Web Cryptography API internally to en/decrypt sign and verify cookies. 
 
